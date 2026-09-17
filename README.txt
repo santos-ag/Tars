@@ -1,3 +1,5 @@
+Tars - Machine Learning library built from scratch!
+
 How to build and run:
 
 nix-shell
