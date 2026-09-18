@@ -1,4 +1,6 @@
 #pragma once
+#include "Layer.hpp"
+#include "NeuralNetwork.hpp"
 #include <array>
 #include <vector>
 
@@ -14,9 +16,9 @@ class Train {
 
     std::vector<float> bgd(std::vector<float> params);
 
-    void optimizer(std::vector<float> &params, float lr);
+    void optimizer(NeuralNetwork model, float lr);
 
-    std::vector<float> loop();
+    std::vector<Layer> loop();
 
   private:
     float forward(std::array<float, 2> &activations, std::vector<float> &params);

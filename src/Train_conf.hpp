@@ -15,9 +15,7 @@ struct data {
     float y;
 };
 
-inline std::vector<int> topology = {3, 3, 1};
-
-inline NeuralNetwork model(topology);
+inline std::vector<int> topology = {2, 1};
 
 inline std::vector<data> data_tr = {{{0, 0}, 0}, {{1, 0}, 1}, {{0, 1}, 1}, {{1, 1}, 1}};
 } // namespace conf

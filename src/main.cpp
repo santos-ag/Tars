@@ -1,4 +1,5 @@
 #include "./Train.hpp"
+#include "Train_conf.hpp"
 #include <array>
 #include <cmath>
 #include <cstdlib>

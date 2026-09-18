@@ -7,15 +7,17 @@ struct Layer {
     int in;
     int out;
 
-    std::vector<float> weights;
+    std::vector<std::vector<float>> weights;
+    std::vector<float> activations;
     std::vector<float> bias;
 
-    Layer(int in_dim, int out_dim)
-        : in(in_dim), out(out_dim), weights(in_dim * out_dim), bias(out_dim, 0) {
-
+    Layer(int in, int out)
+        : in(in), out(out), weights(in, std::vector<float>(out)), activations(in, 0), bias(out, 0) {
         // Preenche cada peso com um valer entre [-1,1] inclusivo;
         for (auto w : weights) {
-            w = ((float)rand() / RAND_MAX) * 2 - 1;
+            for (auto y : w) {
+                y = ((float)rand() / RAND_MAX) * 2 - 1;
+            }
         }
     }
 };
