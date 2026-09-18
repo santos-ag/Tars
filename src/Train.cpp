@@ -2,7 +2,6 @@
 #include "Layer.hpp"
 #include "NeuralNetwork.hpp"
 #include "Train_conf.hpp"
-#include <execution>
 #include <iostream>
 #include <vector>
 
@@ -69,8 +68,7 @@ float Train::rand_float(float x) {
 std::vector<Layer> Train::loop() {
     NeuralNetwork model(conf::topology);
     for (int i = 0; i < conf::epochs; ++i) {
-        // std::cout << "epoch: " << i << " w1: " << params[0] << " w1: " << params[1]
-        //           << " bias: " << params[2] << " cost: " << cost(params) << std::endl;
+        std::vector<float> forward(std::array<float, 2> & activations, Layer & l);
         optimizer(model, conf::lr);
     }
     std::cout << std::endl;
