@@ -11,7 +11,7 @@ inline float lr = 1e-3;
 inline float h = 1e-4;
 
 struct data {
-    std::array<float, 2> x;
+    std::vector<float> x;
     float y;
 };
 

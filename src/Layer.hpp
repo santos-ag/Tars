@@ -1,8 +1,7 @@
 #pragma once
-#include <cstdlib>
 
+#include <cmath>
 #include <vector>
-
 struct Layer {
     int in;
     int out;

@@ -12,20 +12,15 @@ inline float h = 1e-4;
 
 class Train {
   public:
+    Train(NeuralNetwork *model);
+
+    NeuralNetwork *model{nullptr};
+
     float cost(Layer &l);
 
-    std::vector<std::vector<float>> bgd(Layer &l, NeuralNetwork model);
-
-    void optimizer(NeuralNetwork model, float lr);
+    void optimizer(NeuralNetwork &model, float lr);
 
     std::vector<Layer> loop();
 
-  private:
-    float forward(std::array<float, 2> &activations, Layer &l);
-
-    float sigmoidf(float x);
-
-    float ReLU(float x);
-
-    float rand_float(float x);
+    std::vector<std::vector<float>> bgd(Layer &l);
 };

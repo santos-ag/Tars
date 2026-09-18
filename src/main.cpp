@@ -1,4 +1,6 @@
 #include "./Train.hpp"
+#include "Layer.hpp"
+#include "NeuralNetwork.hpp"
 #include "Train_conf.hpp"
 #include <array>
 #include <cmath>
@@ -10,11 +12,11 @@
 using namespace std;
 
 int main() {
-    Train train;
-    vector<int> topology = {1, 1};
+    NeuralNetwork model(conf::topology);
+    Train train(&model);
 
-    vector<float> res = train.loop();
-
+    vector<Layer> res2 = train.loop();
+    vector<float> res = res2[0].weights[0];
     cout << " w1: " << res[0] << " w1: " << res[1] << " bias: " << res[2]
-         << " cost: " << train.cost(res) << endl;
+         << " cost: " << train.cost(res2[0]) << endl;
 }
