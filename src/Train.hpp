@@ -20,5 +20,5 @@ class Train {
 
     float sigmoidf(float x);
 
-    float rfloat(float x);
+    float rand_float(float x);
 };

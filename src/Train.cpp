@@ -1,8 +1,6 @@
 #include "Train.hpp"
 #include "./train_conf.hpp"
-float conf::oracle(std::array<float, 2> &activations) {
-    return (activations[0] || activations[1]) ? 1.0f : 0.0f;
-}
+#include <vector>
 
 float Train::sigmoidf(float x) {
     return 1.0f / (1.0f + exp(-x));
@@ -19,9 +17,9 @@ float Train::forward(std::array<float, 2> &activations, std::vector<float> &para
 float Train::cost(std::vector<float> &params) {
     float result = 0;
     for (int i = 0; i < conf::data_tr.size(); ++i) {
-        float y = conf::oracle(conf::data_tr[i]);
+        float y = conf::data_tr[i].y;
 
-        float p = forward(conf::data_tr[i], params);
+        float p = forward(conf::data_tr[i].x, params);
 
         float d = y - p;
         result += d * d;
@@ -51,13 +49,12 @@ void Train::optimizer(std::vector<float> &params, float lr) {
     }
 }
 
-float Train::rfloat(float x) {
+float Train::rand_float(float x) {
     return x * (float)rand() / (float)RAND_MAX;
 }
 
 std::vector<float> Train::loop() {
-    srand(time(nullptr));
-    std::vector<float> params = {rfloat(2) - 1, rfloat(2) - 1, rfloat(2) - 1};
+    std::vector<float> params = conf::params;
     for (int i = 0; i < conf::epochs; ++i) {
 
         std::cout << "epoch: " << i << " w1: " << params[0] << " w1: " << params[1]
