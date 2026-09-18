@@ -1,9 +1,18 @@
 #include "Train.hpp"
-#include "./train_conf.hpp"
+#include "./Train_conf.hpp"
+#include <iostream>
 #include <vector>
 
 float Train::sigmoidf(float x) {
     return 1.0f / (1.0f + exp(-x));
+}
+
+float Train::ReLU(float x) {
+    if (x > 0.0) {
+        return x;
+    } else {
+        return 0.0;
+    }
 }
 
 float Train::forward(std::array<float, 2> &activations, std::vector<float> &params) {
