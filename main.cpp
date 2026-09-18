@@ -10,7 +10,7 @@ class Train {
     const int epochs = 10000;
     const float lr = 1e-2;
     float oracle(float x) {
-        return 2 * x - 9;
+        return 13 * x - 2;
     }
 
   public:
@@ -27,7 +27,8 @@ class Train {
         return result / data_tr.size();
     }
     vector<float> derivate(float w, float b) {
-        return {(cost(w + der, b) - cost(w, b)) / der, (cost(w, b + der) - cost(w, b)) / der};
+        return {(cost(w + der, b) - cost(w - der, b)) / (2.0f * der),
+                (cost(w, b + der) - cost(w, b - der)) / (2.0f * der)};
     }
     vector<float> loop() {
         srand(time(nullptr));
