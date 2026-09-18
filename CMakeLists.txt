@@ -10,4 +10,5 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(tars-ml
     src/main.cpp
+    src/Train.cpp
 )

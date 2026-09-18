@@ -25,7 +25,6 @@ class Train {
         return sigmoidf(z);
     }
 
-  public:
     float cost(vector<float> &params) {
         float result = 0;
         for (int i = 0; i < data_tr.size(); ++i) {
@@ -61,6 +60,8 @@ class Train {
     float rfloat(float x) {
         return x * (float)rand() / (float)RAND_MAX;
     }
+
+  public:
     vector<float> loop() {
         srand(time(nullptr));
         vector<float> params = {rfloat(2) - 1, rfloat(2) - 1, rfloat(2) - 1};
@@ -79,6 +80,5 @@ int main() {
     data_tr = {{0, 0}, {0, 1}, {1, 0}, {1, 1}};
     Train train;
     vector<float> res = train.loop();
-    cout << " w1: " << res[0] << " w1: " << res[1] << " bias: " << res[2]
-         << " cost: " << train.cost(res) << endl;
+    cout << " w1: " << res[0] << " w1: " << res[1] << " bias: " << res[2] << endl;
 }

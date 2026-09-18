@@ -125,7 +125,7 @@ dedicadas para redes neurais de tempo contínuo (*Closed-form Continuous-time Ne
   - Abordagem inicial: laços aninhados diretos;
   - Abordagem otimizada: `im2col` + GEMM (General Matrix Multiplication).
 - **Otimizador:** **Adam (Adaptive Moment Estimation)**:
-  $$m_t = \beta_1 m_{t-1} + (1-\beta_1)g_t, \quad v_t = \beta_2 v_{t-2} + (1-\beta_2)g_t^2$$
+  $$m_t = \beta_1 m_{t-1} + (1-\beta_1)g_t, \quad v_t = \beta_2 v_{t-1} + (1-\beta_2)g_t^2$$
   $$\hat{m}_t = \frac{m_t}{1-\beta_1^t}, \quad \hat{v}_t = \frac{v_t}{1-\beta_2^t}, \quad \theta \leftarrow \theta - \frac{\eta}{\sqrt{\hat{v}_t} + \epsilon}\hat{m}_t$$
 
 #### 2. Requisitos para Execução
