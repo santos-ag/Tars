@@ -12,16 +12,16 @@ inline float h = 1e-4;
 
 class Train {
   public:
-    float cost(std::vector<float> &params);
+    float cost(Layer &l);
 
-    std::vector<float> bgd(std::vector<float> params);
+    std::vector<std::vector<float>> bgd(Layer &l, NeuralNetwork model);
 
     void optimizer(NeuralNetwork model, float lr);
 
     std::vector<Layer> loop();
 
   private:
-    float forward(std::array<float, 2> &activations, std::vector<float> &params);
+    float forward(std::array<float, 2> &activations, Layer &l);
 
     float sigmoidf(float x);
 
