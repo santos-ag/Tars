@@ -38,7 +38,7 @@ module tb;
         $dumpvars(0, tb);
 
         $display("=========================================================================");
-        $display("🚀 SIMULAÇÃO NPU BINÁRIA (Arthur - main.sv) - Produto Escalar 4D + Bias");
+        $display(" SIMULAÇÃO NPU BINÁRIA (Arthur - main.sv) - Produto Escalar 4D + Bias");
         $display("=========================================================================");
 
         // Reset inicial
@@ -55,7 +55,7 @@ module tb;
         bias = 32'sd10;
 
         $display("\n-------------------------------------------------------------------------");
-        $display("📥 TESTE 1: Visão Geral de Entradas do Neurônio");
+        $display(" TESTE 1: Visão Geral de Entradas do Neurônio");
         $display("   Ativações (A): [ %0d, %0d, %0d, %0d ]",
                  dut.ram_a[0], dut.ram_a[1], dut.ram_a[2], dut.ram_a[3]);
         $display("   Pesos     (B): [ %0d, %0d, %0d, %0d ]",
@@ -63,7 +63,7 @@ module tb;
         $display("   Bias         : %0d", bias);
         $display("   Fórmula      : (1*5) + (2*6) + (3*7) + (4*8) + 10 = 5 + 12 + 21 + 32 + 10 = 80");
         $display("-------------------------------------------------------------------------");
-        $display("⏱️  Passo a Passo da Execução:");
+        $display("  Passo a Passo da Execução:");
 
         @(negedge clk);
         start = 1;
@@ -75,11 +75,11 @@ module tb;
         start = 0;
 
         #1;
-        $display("🎯 Resultado Final : %0d (Esperado: 80)", result);
+        $display(" Resultado Final : %0d (Esperado: 80)", result);
         if (result === 32'sd80) begin
-            $display("✅ STATUS: TESTE 1 PASSOU!");
+            $display(" STATUS: TESTE 1 PASSOU!");
         end else begin
-            $display("❌ STATUS: TESTE 1 FALHOU!");
+            $display(" STATUS: TESTE 1 FALHOU!");
         end
 
         // Reset entre testes
@@ -95,7 +95,7 @@ module tb;
         bias = -32'sd5;
 
         $display("\n-------------------------------------------------------------------------");
-        $display("📥 TESTE 2: Visão Geral de Entradas do Neurônio (Com Sinal)");
+        $display(" TESTE 2: Visão Geral de Entradas do Neurônio (Com Sinal)");
         $display("   Ativações (A): [ %0d, %0d, %0d, %0d ]",
                  dut.ram_a[0], dut.ram_a[1], dut.ram_a[2], dut.ram_a[3]);
         $display("   Pesos     (B): [ %0d, %0d, %0d, %0d ]",
@@ -103,7 +103,7 @@ module tb;
         $display("   Bias         : %0d", bias);
         $display("   Fórmula      : (-2*4) + (3*-2) + (-4*3) + (5*-1) + (-5) = -8 - 6 - 12 - 5 - 5 = -36");
         $display("-------------------------------------------------------------------------");
-        $display("⏱️  Passo a Passo da Execução:");
+        $display("  Passo a Passo da Execução:");
 
         @(negedge clk);
         start = 1;
@@ -124,7 +124,7 @@ module tb;
 
         #30;
         $display("\n=========================================================================");
-        $display("🎉 Simulação NPU Binária Finalizada!");
+        $display(" Simulação NPU Binária Finalizada!");
         $display("=========================================================================");
         $finish;
     end

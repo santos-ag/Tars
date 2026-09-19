@@ -24,17 +24,18 @@ int main() {
     NeuralNetwork model(conf::topology);
     Train train(&model);
     f32 initial_error = train.cost();
-    cout << "\nmodelo inicial:" << endl << endl;
+
+    cout << "\nmodelo inicial:\n\n";
     for (auto l : model.get_layers()) {
         for (usize i = 0; i < l.out; i++) {
             for (usize j = 0; j < l.in; j++) {
-                cout << "w" << j << " " << l.weights[i][j] << " ";
+                cout << "w" << j << ": " << l.weights[i][j] << " ";
             }
-            cout << " bias : " << l.bias[i] << "; ";
+            cout << " z: " << l.bias[i] << "; ";
         }
-        cout << endl;
+        cout << "\n\n";
     }
-    cout << endl;
+
     v<Layer> result;
     long elapse_time;
     if (debug_mode) {
@@ -48,17 +49,18 @@ int main() {
             std::chrono::duration_cast<std::chrono::milliseconds>(final_time - initial_time)
                 .count();
     }
-    cout << "\nmodelo final:" << endl << endl;
+
+    cout << "\nmodelo final:" << "\n\n";
     for (auto l : result) {
         for (usize i = 0; i < l.out; i++) {
             for (usize j = 0; j < l.in; j++) {
-                cout << "w" << j << " " << l.weights[i][j] << " ";
+                cout << "w" << j << ": " << l.weights[i][j] << " ";
             }
-            cout << " bias : " << l.bias[i] << "; ";
+            cout << " z: " << l.bias[i] << "; ";
         }
-        cout << endl;
+        cout << '\n';
     }
-    cout << endl;
+    cout << '\n';
     cout << "Erro da rede:" << endl << initial_error << "-->" << train.cost() << endl;
     if (!debug_mode) {
         cout << "Tempo total de treino: " << elapse_time << "ms" << endl;
