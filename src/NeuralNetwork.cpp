@@ -25,7 +25,7 @@ v<float> NeuralNetwork::forward(v<float> activations) {
                 // ativação vezes o respectivo peso
                 z += w * activations[j];
             }
-            next[i] = z;
+            next[i] = sigmoidf(z);
         }
         activations = next;
     }

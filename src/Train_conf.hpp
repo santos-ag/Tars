@@ -7,7 +7,7 @@
 
 namespace conf {
 inline int epochs = 10000;
-inline float lr = 1e-2;
+inline float lr = 1e-1;
 inline float h = 1e-4;
 
 struct data {
@@ -15,8 +15,7 @@ struct data {
     float y;
 };
 
-inline v<int> topology = {1, 1};
+inline v<int> topology = {2, 1};
 
-inline v<data> data_tr = {{{0}, 7},  {{1}, 9},  {{2}, 11}, {{3}, 13}, {{4}, 15}, {{5}, 17},
-                          {{6}, 19}, {{7}, 21}, {{8}, 23}, {{9}, 25}, {{10}, 27}};
+inline v<data> data_tr = {{{0, 0}, 0}, {{1, 0}, 1}, {{0, 1}, 1}, {{1, 1}, 1}};
 } // namespace conf
