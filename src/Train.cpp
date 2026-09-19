@@ -70,7 +70,7 @@ v<Layer> Train::loop() {
 
     for (usize i = 1; i <= conf::epochs; ++i) {
         optimizer(conf::lr);
-        if (i % (int)(config::epochs * 5) == 0) {
+        if (i % (int)((conf::epochs / 20)) == 0) {
             std::cout << i << " ";
             std::cout << cost() << '\n';
         }
