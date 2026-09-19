@@ -22,11 +22,11 @@ int main() {
 
     for (auto l : res2) {
 
-        int sz1 = l.weights.size();
-        for (int i = 0; i < sz1; i++) {
+        i32 sz1 = l.weights.size();
+        for (i32 i = 0; i < sz1; i++) {
 
-            int sz2 = l.weights[i].size();
-            for (int j = 0; j < sz2; j++) {
+            i32 sz2 = l.weights[i].size();
+            for (i32 j = 0; j < sz2; j++) {
                 cout << l.weights[i][j] << " ";
             }
 

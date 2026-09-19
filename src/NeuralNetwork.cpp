@@ -4,24 +4,24 @@
 #include <utility>
 #include <vector>
 
-NeuralNetwork::NeuralNetwork(const v<int> &topology) {
-    for (int i = 0; i < topology.size() - 1; i++) {
+NeuralNetwork::NeuralNetwork(const v<i32> &topology) {
+    for (i32 i = 0; i < topology.size() - 1; i++) {
         layers.emplace_back(topology[i], topology[i + 1]);
     }
 }
 
-v<float> NeuralNetwork::forward(v<float> activations) {
+v<f32> NeuralNetwork::forward(v<f32> activations) {
     // saida de uma vira activation da proxima
     for (auto &l : layers) {
-        v<float> next(l.out, 0);
+        v<f32> next(l.out, 0);
         // para cada neuronio de saida da camada
-        for (int i = 0; i < l.out; i++) {
+        for (i32 i = 0; i < l.out; i++) {
             // bias do iesimo neuronio(o que estamos olhando agr)
-            float z = l.bias[i];
+            f32 z = l.bias[i];
             // para cada peso que entra nesse neuronio
-            for (int j = 0; j < l.in; j++) {
+            for (i32 j = 0; j < l.in; j++) {
                 // pega o peso em ordem que entram nesse neuronio
-                float w = l.weights[i][j];
+                f32 w = l.weights[i][j];
                 // ativação vezes o respectivo peso
                 z += w * activations[j];
             }

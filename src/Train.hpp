@@ -5,9 +5,9 @@
 #include <array>
 #include <vector>
 namespace config {
-inline int epochs = 1000;
-inline float lr = 1e-2;
-inline float h = 1e-4;
+inline i32 epochs = 1000;
+inline f32 lr = 1e-2;
+inline f32 h = 1e-4;
 }; // namespace config
 
 class Train {
@@ -16,11 +16,11 @@ class Train {
 
     NeuralNetwork *model{nullptr};
 
-    float cost();
+    f32 cost();
 
-    void optimizer(float lr);
+    void optimizer(f32 lr);
 
     v<Layer> loop();
 
-    m<float> bgd(Layer &l);
+    m<f32> bgd(Layer &l);
 };

@@ -5,9 +5,9 @@
 #include <vector>
 class NeuralNetwork {
   public:
-    explicit NeuralNetwork(const v<int> &topology);
+    explicit NeuralNetwork(const v<i32> &topology);
 
-    v<float> forward(v<float> activations);
+    v<f32> forward(v<f32> activations);
 
     const v<Layer> &get_layers() const;
 

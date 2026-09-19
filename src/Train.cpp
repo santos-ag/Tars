@@ -7,56 +7,56 @@
 Train::Train(NeuralNetwork *model) : model(model) {
 }
 
-float Train::cost() {
+f32 Train::cost() {
 
-    float result = 0;
-    for (int i = 0; i < conf::data_tr.size(); ++i) {
-        float y = conf::data_tr[i].y;
-        float p = model->forward(conf::data_tr[i].x)[0];
-        float d = y - p;
+    f32 result = 0;
+    for (i32 i = 0; i < conf::data_tr.size(); ++i) {
+        f32 y = conf::data_tr[i].y;
+        f32 p = model->forward(conf::data_tr[i].x)[0];
+        f32 d = y - p;
         result += d * d;
     }
     return result / conf::data_tr.size();
 }
 
-void Train::optimizer(float lr) {
+void Train::optimizer(f32 lr) {
     auto &layers = model->get_layers();
     for (auto &l : layers) {
         auto grad = bgd(l);
-        for (int i = 0; i < l.weights.size(); ++i) {
-            for (int j = 0; j < l.weights[i].size(); ++j) {
+        for (i32 i = 0; i < l.weights.size(); ++i) {
+            for (i32 j = 0; j < l.weights[i].size(); ++j) {
                 l.weights[i][j] -= lr * grad[i][j];
             }
         }
-        for (int j = 0; j < l.bias.size(); j++) {
-            float original = l.bias[j];
+        for (i32 j = 0; j < l.bias.size(); j++) {
+            f32 original = l.bias[j];
             l.bias[j] = original + conf::h;
 
-            float costp = cost();
+            f32 costp = cost();
             l.bias[j] = original - conf::h;
 
             auto costm = cost();
             l.bias[j] = original;
 
-            float gradbias = (costp - costm) / (2.0f * conf::h);
+            f32 gradbias = (costp - costm) / (2.0f * conf::h);
             l.bias[j] -= conf::lr * gradbias;
         }
     }
 }
 
-m<float> Train::bgd(Layer &l) {
+m<f32> Train::bgd(Layer &l) {
     auto &params = l.weights;
-    m<float> derivates(params.size(), v<float>(params[0].size()));
+    m<f32> derivates(params.size(), v<f32>(params[0].size()));
 
-    for (int i = 0; i < derivates.size(); i++) {
-        for (int j = 0; j < derivates[0].size(); j++) {
-            float temp = params[i][j];
+    for (i32 i = 0; i < derivates.size(); i++) {
+        for (i32 j = 0; j < derivates[0].size(); j++) {
+            f32 temp = params[i][j];
             params[i][j] = temp + conf::h;
 
-            float costp = cost();
+            f32 costp = cost();
             params[i][j] = temp - conf::h;
 
-            float costm = cost();
+            f32 costm = cost();
             derivates[i][j] = (costp - costm) / (2 * conf::h);
             params[i][j] = temp;
         }
@@ -66,7 +66,7 @@ m<float> Train::bgd(Layer &l) {
 
 v<Layer> Train::loop() {
 
-    for (int i = 0; i < conf::epochs; ++i) {
+    for (i32 i = 0; i < conf::epochs; ++i) {
         optimizer(conf::lr);
         std::cout << i << " ";
         std::cout << cost() << '\n';
