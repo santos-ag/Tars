@@ -15,7 +15,9 @@ struct data {
     float y;
 };
 
-inline std::vector<int> topology = {2, 1};
+inline std::vector<int> topology = {1, 1};
 
-inline std::vector<data> data_tr = {{{0, 0}, 0}, {{1, 0}, 1}, {{0, 1}, 1}, {{1, 1}, 1}};
+inline std::vector<data> data_tr = {{{0}, 7},  {{1}, 9},  {{2}, 11}, {{3}, 13},
+                                    {{4}, 15}, {{5}, 17}, {{6}, 19}, {{7}, 21},
+                                    {{8}, 23}, {{9}, 25}, {{10}, 27}};
 } // namespace conf

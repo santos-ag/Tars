@@ -8,7 +8,7 @@
 Train::Train(NeuralNetwork *model) : model(model) {
 }
 
-float Train::cost(Layer &l) {
+float Train::cost() {
 
     float result = 0;
     for (int i = 0; i < conf::data_tr.size(); ++i) {
@@ -20,8 +20,8 @@ float Train::cost(Layer &l) {
     return result / conf::data_tr.size();
 }
 
-void Train::optimizer(NeuralNetwork &model, float lr) {
-    auto layers = model.get_layers();
+void Train::optimizer(float lr) {
+    auto &layers = model->get_layers();
     for (auto &l : layers) {
         auto grad = bgd(l);
         for (int i = 0; i < l.weights.size(); ++i) {
@@ -33,7 +33,7 @@ void Train::optimizer(NeuralNetwork &model, float lr) {
 }
 
 std::vector<std::vector<float>> Train::bgd(Layer &l) {
-    auto params = l.weights;
+    auto &params = l.weights;
     std::vector<std::vector<float>> derivates(params.size(), std::vector<float>(params[0].size()));
 
     for (int i = 0; i < derivates.size(); i++) {
@@ -41,10 +41,10 @@ std::vector<std::vector<float>> Train::bgd(Layer &l) {
             float temp = params[i][j];
             params[i][j] = temp + conf::h;
 
-            float costp = cost(l);
+            float costp = cost();
             params[i][j] = temp - conf::h;
 
-            float costm = cost(l);
+            float costm = cost();
             derivates[i][j] = (costp - costm) / (2 * conf::h);
             params[i][j] = temp;
         }
@@ -53,11 +53,10 @@ std::vector<std::vector<float>> Train::bgd(Layer &l) {
 }
 
 std::vector<Layer> Train::loop() {
-    NeuralNetwork model(conf::topology);
+
     for (int i = 0; i < conf::epochs; ++i) {
-        std::vector<float> forward(std::array<float, 2> & activations, Layer & l);
-        optimizer(model, conf::lr);
+        optimizer(conf::lr);
     }
     std::cout << std::endl;
-    return model.get_layers();
+    return model->get_layers();
 }

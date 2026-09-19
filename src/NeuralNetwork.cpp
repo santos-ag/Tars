@@ -1,5 +1,8 @@
 #include "NeuralNetwork.hpp"
 #include "Layer.hpp"
+#include "Math.hpp"
+#include <utility>
+#include <vector>
 
 NeuralNetwork::NeuralNetwork(const std::vector<int> &topology) {
     for (int i = 0; i < topology.size() - 1; i++) {
@@ -7,21 +10,27 @@ NeuralNetwork::NeuralNetwork(const std::vector<int> &topology) {
     }
 }
 
-float NeuralNetwork::forward(std::vector<float> &activations) {
-    float z{0};
+float NeuralNetwork::forward(std::vector<float> activations) {
+    std::vector<float> current = activations;
+
     for (auto &l : layers) {
         const int total_out_neurons = l.bias.size();
-        for (int i = 0; i < total_out_neurons; i++) {
-            z = l.bias[i];
+        std::vector<float> next(l.out, 0);
 
+        for (int i = 0; i < total_out_neurons; i++) {
+            float z{l.bias[i]};
             const int total_weights = l.weights.size();
+
             for (int j = 0; j < total_weights; j++) {
-                float w = l.weights[i][j];
+                float w = l.weights[j][i];
                 z += w * activations[j];
             }
+            next[i] = sigmoidf(z);
         }
+        l.activations = next;
+        current = std::move(next);
     }
-    return sigmoidf(z);
+    return current.front();
 }
 
 const std::vector<Layer> &NeuralNetwork::get_layers() const {

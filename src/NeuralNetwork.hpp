@@ -7,7 +7,7 @@ class NeuralNetwork {
   public:
     explicit NeuralNetwork(const std::vector<int> &topology);
 
-    float forward(std::vector<float> &activations);
+    float forward(std::vector<float> activations);
 
     const std::vector<Layer> &get_layers() const;
 

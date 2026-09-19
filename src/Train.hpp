@@ -16,9 +16,9 @@ class Train {
 
     NeuralNetwork *model{nullptr};
 
-    float cost(Layer &l);
+    float cost();
 
-    void optimizer(NeuralNetwork &model, float lr);
+    void optimizer(float lr);
 
     std::vector<Layer> loop();
 
