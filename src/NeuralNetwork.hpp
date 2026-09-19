@@ -1,18 +1,18 @@
 #pragma once
 #include "Layer.hpp"
 #include "Math.hpp"
+#include "Types.hpp"
 #include <vector>
-
 class NeuralNetwork {
   public:
-    explicit NeuralNetwork(const std::vector<int> &topology);
+    explicit NeuralNetwork(const v<int> &topology);
 
-    float forward(std::vector<float> activations);
+    v<float> forward(v<float> activations);
 
-    const std::vector<Layer> &get_layers() const;
+    const v<Layer> &get_layers() const;
 
-    std::vector<Layer> &get_layers();
+    v<Layer> &get_layers();
 
   private:
-    std::vector<Layer> layers;
+    v<Layer> layers;
 };

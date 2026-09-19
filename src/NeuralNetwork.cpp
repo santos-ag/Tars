@@ -4,39 +4,38 @@
 #include <utility>
 #include <vector>
 
-NeuralNetwork::NeuralNetwork(const std::vector<int> &topology) {
+NeuralNetwork::NeuralNetwork(const v<int> &topology) {
     for (int i = 0; i < topology.size() - 1; i++) {
         layers.emplace_back(topology[i], topology[i + 1]);
     }
 }
 
-float NeuralNetwork::forward(std::vector<float> activations) {
-    std::vector<float> current = activations;
-
+v<float> NeuralNetwork::forward(v<float> activations) {
+    // saida de uma vira activation da proxima
     for (auto &l : layers) {
-        const int total_out_neurons = l.bias.size();
-        std::vector<float> next(l.out, 0);
-
-        for (int i = 0; i < total_out_neurons; i++) {
-            float z{l.bias[i]};
-            const int total_weights = l.weights.size();
-
-            for (int j = 0; j < total_weights; j++) {
-                float w = l.weights[j][i];
-                z += w * current[j];
+        v<float> next(l.out, 0);
+        // para cada neuronio de saida da camada
+        for (int i = 0; i < l.out; i++) {
+            // bias do iesimo neuronio(o que estamos olhando agr)
+            float z = l.bias[i];
+            // para cada peso que entra nesse neuronio
+            for (int j = 0; j < l.in; j++) {
+                // pega o peso em ordem que entram nesse neuronio
+                float w = l.weights[i][j];
+                // ativação vezes o respectivo peso
+                z += w * activations[j];
             }
             next[i] = z;
         }
-        l.activations = next;
-        current = std::move(next);
+        activations = next;
     }
-    return current.front();
+    return activations;
 }
 
-const std::vector<Layer> &NeuralNetwork::get_layers() const {
+const v<Layer> &NeuralNetwork::get_layers() const {
     return layers;
 }
 
-std::vector<Layer> &NeuralNetwork::get_layers() {
+v<Layer> &NeuralNetwork::get_layers() {
     return layers;
 }

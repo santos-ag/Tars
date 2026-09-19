@@ -1,9 +1,9 @@
 #pragma once
 #include "Layer.hpp"
 #include "NeuralNetwork.hpp"
+#include "Types.hpp"
 #include <array>
 #include <vector>
-
 namespace config {
 inline int epochs = 1000;
 inline float lr = 1e-2;
@@ -20,7 +20,7 @@ class Train {
 
     void optimizer(float lr);
 
-    std::vector<Layer> loop();
+    v<Layer> loop();
 
-    std::vector<std::vector<float>> bgd(Layer &l);
+    v<v<float>> bgd(Layer &l);
 };

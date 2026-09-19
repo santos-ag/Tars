@@ -3,7 +3,6 @@
 #include "NeuralNetwork.hpp"
 #include "Train_conf.hpp"
 #include <iostream>
-#include <vector>
 
 Train::Train(NeuralNetwork *model) : model(model) {
 }
@@ -13,7 +12,7 @@ float Train::cost() {
     float result = 0;
     for (int i = 0; i < conf::data_tr.size(); ++i) {
         float y = conf::data_tr[i].y;
-        float p = model->forward(conf::data_tr[i].x);
+        float p = model->forward(conf::data_tr[i].x)[0];
         float d = y - p;
         result += d * d;
     }
@@ -45,9 +44,9 @@ void Train::optimizer(float lr) {
     }
 }
 
-std::vector<std::vector<float>> Train::bgd(Layer &l) {
+m<float> Train::bgd(Layer &l) {
     auto &params = l.weights;
-    std::vector<std::vector<float>> derivates(params.size(), std::vector<float>(params[0].size()));
+    m<float> derivates(params.size(), v<float>(params[0].size()));
 
     for (int i = 0; i < derivates.size(); i++) {
         for (int j = 0; j < derivates[0].size(); j++) {
@@ -65,10 +64,11 @@ std::vector<std::vector<float>> Train::bgd(Layer &l) {
     return derivates;
 }
 
-std::vector<Layer> Train::loop() {
+v<Layer> Train::loop() {
 
     for (int i = 0; i < conf::epochs; ++i) {
         optimizer(conf::lr);
+        std::cout << i << " ";
         std::cout << cost() << '\n';
     }
     std::cout << std::endl;

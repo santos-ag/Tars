@@ -10,14 +10,16 @@
 #include <iterator>
 #include <vector>
 
-using namespace std;
+using std::cin;
+using std::cout;
 
 int main() {
     srand(time(0));
     NeuralNetwork model(conf::topology);
     Train train(&model);
 
-    vector<Layer> res2 = train.loop();
+    v<Layer> res2 = train.loop();
+
     for (auto l : res2) {
 
         int sz1 = l.weights.size();
@@ -25,12 +27,10 @@ int main() {
 
             int sz2 = l.weights[i].size();
             for (int j = 0; j < sz2; j++) {
-                std::cout << l.weights[i][j] << '\n';
+                cout << l.weights[i][j] << '\n';
             }
-            std::cout << l.bias[i] << ' ';
+            cout << l.bias[i] << ' ';
         }
+        cout << std::endl;
     }
-
-    // cout << " w1: " << res[0] << " w1: " << res[1] << " bias: " << res[2]
-    //      << " cost: " << train.cost(res2[0]) << endl;
 }
