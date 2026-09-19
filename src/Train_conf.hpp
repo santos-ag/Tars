@@ -17,7 +17,10 @@ struct data {
     f32 y;
 };
 
-inline v<i32> topology = {2, 2, 1};
+inline v<i32> topology = {3, 8, 1};
 
-inline v<data> data_tr = {{{0, 0}, 0}, {{1, 0}, 1}, {{0, 1}, 1}, {{1, 1}, 0}};
+inline v<data> data_tr = {
+    {{0, 0, 0}, 0}, {{0, 0, 1}, 1}, {{0, 1, 0}, 1}, {{0, 1, 1}, 0},
+    {{1, 0, 0}, 1}, {{1, 0, 1}, 0}, {{1, 1, 0}, 0}, {{1, 1, 1}, 1},
+};
 } // namespace conf

@@ -15,7 +15,7 @@ class Train {
 
     void optimizer(f32 lr);
 
-    v<Layer> loop();
+    v<Layer> loop(bool debug_mode);
 
     m<f32> bgd(Layer &l);
 };
