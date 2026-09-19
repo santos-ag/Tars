@@ -65,11 +65,15 @@ m<f32> Train::bgd(Layer &l) {
 }
 
 v<Layer> Train::loop() {
+    std::cout << 0 << " ";
+    std::cout << cost() << '\n';
 
-    for (i32 i = 0; i < conf::epochs; ++i) {
+    for (usize i = 1; i <= conf::epochs; ++i) {
         optimizer(conf::lr);
-        std::cout << i << " ";
-        std::cout << cost() << '\n';
+        if (i % (int)(config::epochs * 5) == 0) {
+            std::cout << i << " ";
+            std::cout << cost() << '\n';
+        }
     }
     std::cout << std::endl;
     return model->get_layers();

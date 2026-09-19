@@ -7,7 +7,8 @@
 #include <vector>
 
 namespace conf {
-inline i32 epochs = 10000;
+
+inline i32 epochs = 100000;
 inline f32 lr = 1e1;
 inline f32 h = 1e-4;
 
