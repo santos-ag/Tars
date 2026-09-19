@@ -23,9 +23,9 @@ float NeuralNetwork::forward(std::vector<float> activations) {
 
             for (int j = 0; j < total_weights; j++) {
                 float w = l.weights[j][i];
-                z += w * activations[j];
+                z += w * current[j];
             }
-            next[i] = sigmoidf(z);
+            next[i] = z;
         }
         l.activations = next;
         current = std::move(next);

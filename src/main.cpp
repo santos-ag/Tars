@@ -9,9 +9,11 @@
 #include <iostream>
 #include <iterator>
 #include <vector>
+
 using namespace std;
 
 int main() {
+    srand(time(0));
     NeuralNetwork model(conf::topology);
     Train train(&model);
 

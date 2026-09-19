@@ -6,7 +6,7 @@
 #include <vector>
 
 namespace conf {
-inline int epochs = 10;
+inline int epochs = 1000;
 inline float lr = 1e-3;
 inline float h = 1e-4;
 

@@ -29,6 +29,19 @@ void Train::optimizer(float lr) {
                 l.weights[i][j] -= lr * grad[i][j];
             }
         }
+        for (int j = 0; j < l.bias.size(); j++) {
+            float original = l.bias[j];
+            l.bias[j] = original + conf::h;
+
+            float costp = cost();
+            l.bias[j] = original - conf::h;
+
+            auto costm = cost();
+            l.bias[j] = original;
+
+            float gradbias = (costp - costm) / (2.0f * conf::h);
+            l.bias[j] -= conf::lr * gradbias;
+        }
     }
 }
 
@@ -56,6 +69,7 @@ std::vector<Layer> Train::loop() {
 
     for (int i = 0; i < conf::epochs; ++i) {
         optimizer(conf::lr);
+        std::cout << cost() << '\n';
     }
     std::cout << std::endl;
     return model->get_layers();
