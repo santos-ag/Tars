@@ -27,10 +27,11 @@ int main() {
 
             int sz2 = l.weights[i].size();
             for (int j = 0; j < sz2; j++) {
-                cout << l.weights[i][j] << '\n';
+                cout << l.weights[i][j] << " ";
             }
-            cout << l.bias[i] << ' ';
+
+            cout << "  " << l.bias[i] << '\n';
+            cout << std::endl;
         }
-        cout << std::endl;
     }
 }

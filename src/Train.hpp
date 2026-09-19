@@ -22,5 +22,5 @@ class Train {
 
     v<Layer> loop();
 
-    v<v<float>> bgd(Layer &l);
+    m<float> bgd(Layer &l);
 };
