@@ -3,14 +3,8 @@
 #include "NeuralNetwork.hpp"
 #include "Train_conf.hpp"
 #include "Types.hpp"
-#include <array>
 #include <chrono>
-#include <cmath>
-#include <cstdlib>
-#include <ctime>
 #include <iostream>
-#include <iterator>
-#include <vector>
 
 using std::cin;
 using std::cout;
@@ -26,14 +20,19 @@ int main() {
     f32 initial_error = train.cost();
 
     cout << "\nmodelo inicial:\n\n";
+
+    int num_layer = 0;
+
     for (auto l : model.get_layers()) {
         for (usize i = 0; i < l.out; i++) {
             for (usize j = 0; j < l.in; j++) {
-                cout << "w" << j << ": " << l.weights[i][j] << " ";
+                cout << "w" << "(" << num_layer << ")" << "[" << j << "]" << "[" << i << "]" << ": "
+                     << l.weights[i][j] << " ";
             }
-            cout << " z: " << l.bias[i] << "; ";
+            cout << " z: " << l.bias[i] << "; " << '\n';
         }
-        cout << "\n\n";
+        cout << "\n";
+        num_layer++;
     }
 
     v<Layer> result;
@@ -51,15 +50,19 @@ int main() {
     }
 
     cout << "\nmodelo final:" << "\n\n";
+
     for (auto l : result) {
         for (usize i = 0; i < l.out; i++) {
             for (usize j = 0; j < l.in; j++) {
-                cout << "w" << j << ": " << l.weights[i][j] << " ";
+                cout << "w" << "(" << num_layer << ")" << "[" << j << "]" << "[" << i << "]" << ": "
+                     << l.weights[i][j] << " ";
             }
-            cout << " z: " << l.bias[i] << "; ";
+            cout << " z: " << l.bias[i] << "; " << '\n';
         }
-        cout << '\n';
+        cout << "\n";
+        num_layer++;
     }
+
     cout << '\n';
     cout << "Erro da rede:" << endl << initial_error << "-->" << train.cost() << endl;
     if (!debug_mode) {
