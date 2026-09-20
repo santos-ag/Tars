@@ -16,9 +16,9 @@ fn main() {
         let curr_cost = cost(w,b,&DATA_TR);
         if i%(EPOCHS/20)==0 {
             println!("epoch: {:06.0}, cost is:{:014.8}, {:07.3}% better",i,curr_cost,((prev_cost-curr_cost)*100.0)/prev_cost);
+            prev_cost = curr_cost;
 
         }
-        prev_cost = curr_cost;
     }
     }
     println!("w is : {w},b is {b}");
