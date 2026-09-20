@@ -1,297 +1,269 @@
-# tars-ml — Roteiro de Modelos & Arquiteturas de NPU
+# tars-ml — Roteiro de Evolução & Co-Design Hardware/Software
 
-Este documento detalha o plano de evolução incremental do `tars-ml`:
-desde as bases matemáticas de matrizes em C++ até a emulação/síntese de NPUs
-dedicadas para redes neurais de tempo contínuo (*Closed-form Continuous-time Neural Networks — CfC*).
-
----
-
-## Índice
-
-1. [Diretrizes de Implementação](#diretrizes-de-implementação)
-2. [Tabela Resumo das Versões](#tabela-resumo-das-versões)
-3. [Detalhamento Versão por Versão](#detalhamento-versão-por-versão)
-   - [v0 — Neural Core](#v0--neural-core)
-   - [v1 — MNIST MLP](#v1--mnist-mlp)
-   - [v2 — MNIST CNN](#v2--mnist-cnn)
-   - [v3 — CIFAR-10 CNN](#v3--cifar-10-cnn)
-   - [v4 — Neural ODE](#v4--neural-ode)
-   - [v5 — LTC (Liquid Time-Constant)](#v5--ltc-liquid-time-constant)
-   - [v6 — CfC (Closed-Form Continuous-Time)](#v6--cfc-closed-form-continuous-time)
-   - [v7 — Quantized CfC](#v7--quantized-cfc)
-   - [v8 — Streaming CfC](#v8--streaming-cfc)
-4. [Métricas de Validação de NPU](#métricas-de-validação-de-npu)
+Este documento estabelece o plano de evolução incremental do `tars-ml`:
+desde os fundamentos de álgebra linear em C++17 até a síntese de **NPUs dedicadas em SystemVerilog**
+para redes neurais de tempo contínuo (*Closed-form Continuous-time Neural Networks — CfC*).
 
 ---
 
-## Diretrizes de Implementação
+## 📋 Documentação Relacionada
 
-1. **Zero bibliotecas externas de ML:** Toda álgebra, otimizadores e funções de ativação
-   devem ser codificados a mão em C++17 puro.
-2. **Separação de Software e NPU:**
-   - **Software:** Código C++ rodando na CPU (suporta treino com autodiff/backprop ou
-     gradientes analíticos).
-   - **NPU:** Arquitetura de hardware emulada/simulada (ciclo-exata ou functional simulator),
-     focada em **inferência de baixa latência** e/ou aceleração de laços críticos.
-3. **Casamento de Precisão:** O modelo treinado em software expõe exportação de pesos
-   e biases para o formato binário/layout de memória consumido pela NPU correspondente.
+- [Índice & Glossário (`README.md`)](README.md)
+- [Visão Geral da Arquitetura (`ARCHITECTURE.md`)](ARCHITECTURE.md) — Os 3 pilares e casos de uso TinyML.
+- [Precisão Numérica & QAT (`QUANTIZATION.md`)](QUANTIZATION.md) — Modos Q8.24, INT8 e Ternário.
+- [Formato de Memória `.mem` (`MEM_FORMAT.md`)](MEM_FORMAT.md) — Contrato de exportação C++ ↔ Verilog.
+- [Onde Estamos Agora (`STATUS.md`)](STATUS.md) — Estado atual do código e próximo passo.
+- [Decisões de Arquitetura (`DECISIONS.md`)](DECISIONS.md) — O registro de ADRs do projeto.
 
 ---
 
-## Tabela Resumo das Versões
+## 🧭 Como Ler e Executar este Roadmap
 
-| Versão | Modelo / Arquitetura | Dataset / Alvo | Ativações / Módulo | Otimizador | NPU Dedicada |
-| :---: | :--- | :--- | :--- | :--- | :--- |
-| **v0** | Neural Core | Sintético / Validação | Identity, ReLU, Sigmoid | SGD Simples | **Matrix/Tensor Engine** (MAC Array + Accumulator) |
-| **v1** | MNIST MLP | MNIST (28x28) | ReLU, Softmax, Cross-Entropy | SGD com Momentum | **Dense NPU** (Sistolic Array 1D/2D) |
-| **v2** | MNIST CNN | MNIST (28x28) | Conv2D, Max/Avg Pooling, ReLU | Adam | **CNN NPU** (Line-buffer / Sliding Window Engine) |
-| **v3** | CIFAR-10 CNN | CIFAR-10 (32x32x3) | Multi-channel Conv, BatchNorm, Spatial Dropout | AdamW + Cosine Decay | **Multi-channel NPU** (Dataflow Interconnect + Double Buffering) |
-| **v4** | Neural ODE | Séries Temporais / Regressão | Solvers ODE (Euler, Runge-Kutta RK4) | Adam / RMSprop | **ODE NPU** (Integrator Pipeline + Adaptive Stepper) |
-| **v5** | LTC | Séries Irregulares | Recorrência contínua $dx/dt = -\frac{x}{\tau} + f(x,I)$ | AdamW | **Liquid NPU** (Non-linear Exponential Solver Core) |
-| **v6** | CfC | Controle / Séries Temporais | Solução em forma fechada do LTC ($h(t)$ analítico) | AdamW / Lion | **CfC NPU** (Fast Interpolation Engine + Closed-Form Core) |
-| **v7** | Quantized CfC | Ultra-low Power | Quantização INT8, Ternária (-1,0,1), Shift-Arithmetic | Quantization-Aware Training (QAT) | **INT8/Ternary CfC NPU** (Bitwise/Popcount Arithmetic Core) |
-| **v8** | Streaming CfC | Sensores / Edge | Entrada assíncrona, estado oculto persistente | QAT + Fine-Tuning | **Streaming Edge NPU** (Zero-latency Sensor DMA + Ring Buffer) |
+To manter a progressão fluida e evitar travamentos:
+
+1. **Modo Âncora (`Q8_24`)**: é o caminho crítico obrigatório de **todas as versões**.
+   Toda versão deve ser concluída e validada em `Q8_24` antes de avançar.
+2. **Modos Estendidos (`INT8` e `TERNARY`)**: o C++ e a NPU suportam a capacidade em todas
+   as versões, mas a validação formal com critérios de aceitação (DoD) é exigida nos
+   **marcos de destaque** (v0, v0.5, v1, v6 e v7).
+3. **Regra do "Não Empacar"**: se você travar na quantização/ternarização de uma versão complexa,
+   finalize o marco na versão Âncora (`Q8_24`), registre o aprendizado no `STATUS.md` e avance.
 
 ---
 
-## Detalhamento Versão por Versão
+## 📊 Matriz Tripla de Precisão por Versão
+
+```text
+ ┌─────────────────────────────────────────────────────────────────────────────┐
+ │                         MATRIZ DE PRECISÃO POR VERSÃO                       │
+ ├───────────────────┬───────────────────┬───────────────────┬─────────────────┤
+ │ Versão            │ Q8.24 (Âncora)    │ INT8 QAT          │ TERNÁRIO QAT    │
+ ├───────────────────┼───────────────────┼───────────────────┼─────────────────┤
+ │ v0: Neural Core   │ Matrix Q8.24      │ Matrix INT8       │ Matrix Mux 3:1  │
+ │ v0.5: Loop Closure│ Rede XOR na NPU   │ XOR INT8          │ XOR Ternária    │
+ │ v1: Dense MLP     │ Systolic Q8.24    │ Systolic INT8     │ Systolic Ternary│
+ │ v2: Spatial CNN   │ LineBuffer Q8.24  │ LineBuffer INT8   │ LineBuffer Tern │
+ │ v3: Multi-Ch CNN  │ DoubleBuffer Q8   │ DoubleBuffer INT8 │ DoubleBuf Tern  │
+ │ v4: Neural ODE    │ Integrator Q8.24  │ Integrator INT8   │ Integrator Tern │
+ │ v5: LTC           │ Liquid Core Q8    │ Liquid Core INT8  │ Liquid Core Tern│
+ │ v6: CfC           │ CFE Core Q8.24    │ CFE Core INT8     │ CFE Core Ternary│
+ │ v7: Sparsidade    │ Packing & Skip Q8 │ Zero-Skip INT8    │ Zero-Skip Tern  │
+ │ v8: Streaming Edge│ Event DMA Q8.24   │ Event DMA INT8    │ Event DMA Tern  │
+ └───────────────────┴───────────────────┴───────────────────┴─────────────────┘
+```
 
 ---
 
-### v0 — Neural Core
-
-> **Foco:** Fundamentos matemáticos de álgebra linear e primitives de computação vetorial.
-
-#### 1. Módulo de Software (C++)
-- **Estruturas de Dados:** `Tensor<T>`, `Matrix<T>`, `Vector<T>` com alocação contígua em memória.
-- **Operações Fundamentais:**
-  - Multiplicação de Matriz ($\mathbf{C} = \mathbf{A} \cdot \mathbf{B}$);
-  - Soma vetorial e produto Hadamard (elemento a elemento);
-  - Transposição de matrizes.
-- **Funções de Ativação:**
-  - **Sigmoid:** $\sigma(x) = \frac{1}{1 + e^{-x}}$ e derivada $\sigma'(x) = \sigma(x)(1 - \sigma(x))$;
-  - **ReLU:** $f(x) = \max(0, x)$ e derivada $f'(x) = \mathbb{I}(x > 0)$.
-- **Função de Perda:** Erro Quadrático Médio (MSE): $\mathcal{L} = \frac{1}{N} \sum (y - \hat{y})^2$.
-- **Otimizador:** Stochastic Gradient Descent (SGD) vanilla ($\theta \leftarrow \theta - \eta \cdot \nabla_\theta \mathcal{L}$).
-
-#### 2. Requisitos de Aprendizado / Validação
-- Regressão linear sintética ($y = wx + b$);
-- Problema do XOR lógico ($2 \to 2 \to 1$).
-
-#### 3. NPU Respectiva: **Matrix/Tensor Core**
-- **Unidade de Processamento:** Elemento MAC (*Multiply-Accumulate*): $\text{Acc} \leftarrow \text{Acc} + (A \times B)$.
-- **Arquitetura da NPU:**
-  - Registradores de pesos, entrada e acumulador de 32-bit float (ou ponto fixo `Q16.16`);
-  - Unidade de função especial (SFU) para lookup table (LUT) de Sigmoid/ReLU;
-  - Barramento de memória simples para leitura sequencial de matrizes.
+## 🔍 Detalhamento Versão por Versão
 
 ---
 
-### v1 — MNIST MLP
+### v0 — Neural Core & Matrix Engine Parametrizada
 
-> **Foco:** Redes totalmente conectadas (*Dense/Perceptron Multicamadas*) aplicadas à classificação de imagens simples.
+> **Foco**: álgebra linear contígua, backpropagation analítico, treino QAT e produto escalar na NPU.
 
-#### 1. Módulo de Software (C++)
-- **Camadas:** `DenseLayer(in_features, out_features)`.
-- **Ativação Final:** **Softmax**: $S_i = \frac{e^{z_i}}{\sum e^{z_j}}$ com estabilização numérica ($\max(z)$ subtraído).
-- **Função de Perda:** **Categorical Cross-Entropy (CCE)**: $\mathcal{L} = -\sum y_i \log(\hat{y}_i)$.
-- **Inicialização de Pesos:** Xavier/Glorot (`Uniform` ou `Normal`).
-- **Otimizador:** **SGD com Momentum**:
-  $$v_t = \beta v_{t-1} + \eta \nabla_\theta \mathcal{L}, \quad \theta \leftarrow \theta - v_t$$
-- **Dataset Pipeline:** Loader para o dataset **MNIST** (28x28 imagens em escala de cinza, 10 classes). Normalização $[0, 1]$ e mini-batching.
+#### 1. Software (C++)
+- Classes `Matrix<T>` e `Vector<T>` com alocação contígua unidimensional em memória (`std::vector<T> data` indexado por `row * cols + col`).
+- Multiplicação matricial, soma vetorial, produto Hadamard e transposição.
+- Derivadas analíticas para Sigmoid `sigma'(x) = sigma(x)(1 - sigma(x))` e ReLU `f'(x) = (x > 0) ? 1 : 0`.
+- Treino QAT em Q8.24, INT8 e Ternário com STE.
+- Exportador `Exporter.hpp` gerando `model.mem`, `input.mem` e `expected.mem`.
 
-#### 2. Requisitos para Execução
-- Acurácia alvo: $> 95\%$ no conjunto de teste MNIST.
+#### 2. Hardware: `npu_core #(parameter MODE)`
+- Acumulador estendido de 48 bits para evitar overflow na acumulação Q8.24.
+- Regra de saturação para trazer o acumulador de volta para 32 bits.
+- SFU com ReLU combinacional.
 
-#### 3. NPU Respectiva: **Dense NPU**
-- **Arquitetura:**
-  - **Array Sistólico 1D ou 2D** (ex.: $8 \times 8$ MACs);
-  - Memória On-Chip (SRAM) dedicada para pesos da camada densa;
-  - Unidade de Pipelining: produto escalar paralelo $y = \mathbf{W}\mathbf{x} + \mathbf{b}$;
-  - Vetorizador de ativação em hardware (ReLU e LUT Softmax).
+#### 📋 Critérios de Conclusão (DoD - Definition of Done)
+- [ ] C++: treino do XOR (2->2->1) e Regressão Linear converge com erro MSE < 0.01 em `Q8_24`.
+- [ ] Exporter: gera os arquivos `.mem` válidos no formato especificado em `MEM_FORMAT.md`.
+- [ ] NPU: simulação de produto escalar simples de 4 elementos no `tb.sv` bate com o C++ com **zero erros de divergência** nos 3 modos.
 
 ---
 
-### v2 — MNIST CNN
+### v0.5 — Fechamento do Loop de Co-Design (Marco Intermediário)
 
-> **Foco:** Extração de recursos espaciais via convolução 2D e amostragem.
+> 💡 **Por que este marco existe?** Para evitar um salto gigante e arriscado entre o produto
+> escalar simples da v0 e o Array Sistólico da v1. Aqui fechamos o ciclo completo de
+> hardware e software na rede XOR inteira antes de aumentar a complexidade.
 
-#### 1. Módulo de Software (C++)
-- **Novas Camadas:**
-  - `Conv2D(in_channels, out_channels, kernel_size, stride, padding)`;
-  - `MaxPool2D(kernel_size, stride)` e `AvgPool2D(kernel_size, stride)`;
-  - `Flatten` (conversão de tensor 3D para vetor 1D).
-- **Algoritmo de Convolução:**
-  - Abordagem inicial: laços aninhados diretos;
-  - Abordagem otimizada: `im2col` + GEMM (General Matrix Multiplication).
-- **Otimizador:** **Adam (Adaptive Moment Estimation)**:
-  $$m_t = \beta_1 m_{t-1} + (1-\beta_1)g_t, \quad v_t = \beta_2 v_{t-1} + (1-\beta_2)g_t^2$$
-  $$\hat{m}_t = \frac{m_t}{1-\beta_1^t}, \quad \hat{v}_t = \frac{v_t}{1-\beta_2^t}, \quad \theta \leftarrow \theta - \frac{\eta}{\sqrt{\hat{v}_t} + \epsilon}\hat{m}_t$$
+#### 1. Escopo de Co-Design
+- Executar a rede XOR (2->2->1) **inteira em hardware**, camada por camada, no SystemVerilog.
+- O testbench `tb.sv` lê o `model.mem` exportado pelo C++ e guia a NPU sequencialmente pelas 2 camadas.
 
-#### 2. Requisitos para Execução
-- Acurácia alvo: $> 98\%$ no MNIST.
-
-#### 3. NPU Respectiva: **CNN NPU**
-- **Arquitetura:**
-  - **Line-Buffer Engine:** Mantém $K$ linhas da imagem em registradores para deslizar a janela do kernel sem releitura de memória externa;
-  - **Parallel Conv Block:** $K \times K$ multiplicadores operando em um único ciclo de clock;
-  - Hardware de **Max-Pooling**: comparadores em cascata diretamente no fluxo de saída da convolução.
+#### 📋 Critérios de Conclusão (DoD)
+- [ ] NPU: executa a inferência completa das 4 combinações do XOR em SystemVerilog.
+- [ ] Paridade: resultado da NPU bate com a saída de `expected.mem` em `Q8_24` com **zero erros de bit**.
+- [ ] Relatório: registrado o número de ciclos de clock por inferência no `STATUS.md`.
 
 ---
 
-### v3 — CIFAR-10 CNN
+### v1 — Dense MLP & Array Sistólico
 
-> **Foco:** Processamento multicanal RGB, regularização e gerenciamento avançado de dados.
+> **Foco**: redes multicamadas densas, classificação no dataset MNIST e aceleração sistólica.
 
-#### 1. Módulo de Software (C++)
-- **Novas Camadas e Recursos:**
-  - Convolução Multicanal com suporte a $C_{\text{in}} \to C_{\text{out}}$;
-  - **Batch Normalization (BatchNorm2D)**: normalização por batch no treino, estatísticas móveis ($\mu, \sigma^2$) na inferência;
-  - **Spatial Dropout** / **Dropout** regularizador;
-  - Aumento de Dados simples (Random Crop, Horizontal Flip) em C++.
-- **Otimizador:** **AdamW** (Adam com Weight Decay desacoplado) + **Cosine Annealing Learning Rate Scheduler**.
-- **Dataset Pipeline:** Loader para **CIFAR-10** (Imagens $32 \times 32 \times 3$, 10 classes).
+#### 1. Software (C++)
+- `DenseLayer(in_features, out_features)`.
+- Softmax estável e Categorical Cross-Entropy (CCE) com gradiente analítico `grad = y_hat - y`.
+- Otimizador SGD com Momentum (`v_t = beta * v_{t-1} + lr * grad`).
+- Loader nativo para dataset MNIST (formato binário IDX).
 
-#### 2. Requisitos para Execução
-- Acurácia alvo: $> 75\%$ no CIFAR-10.
+#### 2. Hardware: `npu_systolic #(parameter MODE)`
+- Array Sistólico 1D/2D (8x8 Processing Elements).
+- Memória SRAM on-chip para pesos por camada.
 
-#### 3. NPU Respectiva: **Multi-channel NPU**
-- **Arquitetura:**
-  - **Double Buffering Ping-Pong SRAM:** Enquanto o bloco $N$ calcula a convolução do canal $C$, o bloco $N+1$ carrega os pesos do canal $C+1$;
-  - **Dataflow Interconnect:** Roteamento interno entre camadas sem gravação em DRAM;
-  - Módulo BatchNorm integrado em hardware (escala e bias fundidos com o kernel na inferência: $w_{\text{fused}} = \frac{\gamma w}{\sigma}$, $b_{\text{fused}} = \frac{\gamma (b - \mu)}{\sigma} + \beta$).
+#### 📋 Critérios de Conclusão (DoD) *(Metas Iniciais — Recalibrar Empiricamente)*
+- [ ] Acurácia no MNIST (Q8.24 Âncora): > 95% no conjunto de teste.
+- [ ] Acurácia estendida (INT8 QAT): > 93% (hipótese).
+- [ ] Acurácia estendida (Ternário QAT): > 90% (hipótese).
+- [ ] Paridade NPU: zero erros em amostragem de 100 imagens de teste do MNIST.
 
 ---
 
-### v4 — Neural ODE
+### v2 — Spatial CNN 2D & Line-Buffer Engine
 
-> **Foco:** Modelagem de sistemas dinâmicos contínuos e equações diferenciais ordinárias parametrizadas por redes neurais.
+> **Foco**: convoluções bidimensionais e processamento espacial com buffer de linha.
 
-#### 1. Módulo de Software (C++)
-- **Conceito Matemático:**
-  $$\frac{dh(t)}{dt} = f_{\theta}(h(t), t)$$
-  O estado oculto $h(t)$ evolui continuamente no tempo através da função neural $f_\theta$.
-- **Solvers de ODE em C++:**
-  - **Euler Method** (1ª ordem): $h(t + \Delta t) = h(t) + \Delta t \cdot f_\theta(h(t), t)$;
-  - **Runge-Kutta 4ª Ordem (RK4)**:
-    $$k_1 = f_\theta(h, t)$$
-    $$k_2 = f_\theta\left(h + \frac{\Delta t}{2}k_1, t + \frac{\Delta t}{2}\right)$$
-    $$k_3 = f_\theta\left(h + \frac{\Delta t}{2}k_2, t + \frac{\Delta t}{2}\right)$$
-    $$k_4 = f_\theta(h + \Delta t k_3, t + \Delta t)$$
-    $$h(t + \Delta t) = h(t) + \frac{\Delta t}{6}(k_1 + 2k_2 + 2k_3 + k_4)$$
-- **Backpropagation:** Adjoint State Method ou Backpropagation através dos passos do solver.
-- **Aplicações:** Regressão em trajetórias dinâmicas, séries temporais espursas ou irregulares.
+#### 1. Software (C++)
+- `Conv2D`, `MaxPool2D`, `AvgPool2D`, `Flatten`.
+- Algoritmo `im2col` + GEMM adaptado aos modos de precisão.
+- Otimizador Adam (Adaptive Moment Estimation).
 
-#### 2. Requisitos para Execução
-- Reconstrução de trajetórias físicas (ex.: pêndulo simples, espiral 2D ou sistema de Lotka-Volterra).
+#### 2. Hardware: `npu_cnn #(parameter MODE)`
+- Line-Buffer Engine com registradores de deslocamento para janelas KxK.
+- Max-Pooling integrado em hardware.
 
-#### 3. NPU Respectiva: **ODE NPU**
-- **Arquitetura:**
-  - **Integrator Pipeline Engine:** Módulo que executa os 4 estágios do RK4 reaproveitando o mesmo núcleo Denso/MLP;
-  - **Adaptive Step Controller:** Ajustador de passo em hardware que reduz $\Delta t$ se a derivada crescer abruptamente.
+#### 📋 Critérios de Conclusão (DoD)
+- [ ] Acurácia no MNIST (Q8.24 Âncora): > 98%.
+- [ ] NPU: convolução de imagem 28x28 executada com Line-Buffer sem acessos redundantes à memória externa.
 
 ---
 
-### v5 — LTC (Liquid Time-Constant)
+### v3 — Multi-channel CNN & Double Buffering
 
-> **Foco:** Redes neurais inspiradas na biologia (como o sistema nervoso do *C. elegans*), com dinâmicas temporais não-lineares e constantes de tempo adaptativas.
+> **Foco**: sinais multicanais (RGB, vibração multi-eixo), BatchNorm e gerenciamento de memória.
 
-#### 1. Módulo de Software (C++)
-- **Formulação Matemática da Célula LTC:**
-  $$\frac{dx_i(t)}{dt} = -\left[\frac{1}{\tau_i} + \sum_j f_j(x_j(t))\right] x_i(t) + \sum_j f_j(x_j(t)) E_{ij}$$
-  onde $f_j(x_j) = \nu_{ij} \cdot \sigma(\gamma_{ij}(x_j + \mu_{ij}))$.
-- **Características de Software:**
-  - Constante de tempo não-linear dependente da entrada e do estado atual ("tempo líquido");
-  - Integração via solver numérico híbrido (Euler/RK4 adaptativo especial para LTC);
-  - Supre em amostragem assíncrona/irregular de dados.
-- **Otimizador:** AdamW com clipping de gradiente rigoroso ($\|\nabla\| \le 1.0$).
+#### 1. Software (C++)
+- Convolução multicanal `Cin -> Cout`, `BatchNorm2D` (com fusão na inferência) e `SpatialDropout`.
+- Otimizador AdamW + Cosine Annealing Learning Rate Scheduler.
+- Loader nativo para dataset CIFAR-10.
 
-#### 2. Requisitos para Execução
-- Predição e controle de dinâmica em séries temporais com gaps de dados/ruído.
+#### 2. Hardware: `npu_multichannel #(parameter MODE)`
+- Double Buffering Ping-Pong SRAM (carrega canal C+1 enquanto processa C).
 
-#### 3. NPU Respectiva: **Liquid NPU**
-- **Arquitetura:**
-  - **Non-linear Exponential Solver Core:** Módulo de hardware acelerador de exponenciais e sigmoides paralelas para calcular a condutância das sinapses solúveis;
-  - **State Feedback Register Array:** Banco de registradores que atualiza o estado interno $x(t)$ recursivamente a cada sub-passo temporal.
+#### 📋 Critérios de Conclusão (DoD)
+- [ ] Acurácia no CIFAR-10 (Q8.24 Âncora): > 75%.
+- [ ] NPU: fusão de BatchNorm no peso verificada no testbench.
 
 ---
 
-### v6 — CfC (Closed-Form Continuous-Time)
+### v4 — Neural ODE & Integrador Temporal
 
-> **Foco:** Substituição do solver ODE por uma solução analítica aproximada em forma fechada, multiplicando a velocidade de inferência por ordens de grandeza.
+> **Foco**: equações diferenciais ordinárias parametrizadas por redes neurais para trajetórias contínuas.
 
-#### 1. Módulo de Software (C++)
-- **Formulação Matemática da Célula CfC:**
-  $$h(t) \approx \left(f(x, h_0; \theta) \odot e^{-\left[A(x, h_0; \theta) + b\right] t}\right) + g(x, h_0; \theta)$$
-  onde $f, A, g$ são sub-redes neurais rasas (MLPs simples).
-- **Vantagens em Software:**
-  - Não requer iterações de solvers ODE (Euler/RK4) durante o tempo de execução!
-  - Avaliação direta em qualquer tempo $t$ com complexidade $\mathcal{O}(1)$;
-  - Estabilidade garantida por limites assintóticos da função exponencial.
-- **Ativação:** SiLU/Swish ou Tanh com sigmoides nas portas de tempo.
-- **Otimizador:** AdamW ou Lion.
+#### 1. Software (C++)
+- Formulation: `dh(t)/dt = f_theta(h(t), t)`.
+- Solvers em C++: Euler e Runge-Kutta 4ª Ordem (RK4).
+- Backpropagation via Adjoint State Method com QAT.
 
-#### 2. Requisitos para Execução
-- Controle em tempo real (ex.: navegação autônoma simulada ou seguimento de trajetória) rodando com latência ultrabaixa.
+#### 2. Hardware: `npu_ode #(parameter MODE)`
+- Integrator Pipeline Engine re-alimentando os 4 estágios do RK4 no núcleo matricial.
 
-#### 3. NPU Respectiva: **CfC NPU**
-- **Arquitetura:**
-  - **Fast Closed-Form Engine (CFE):**
-    - Unidade de exponenciação rápida ($e^{-x}$) baseada em aproximação por séries de Taylor ou tabelas CORDIC/LUT;
-    - Três sub-blocos de multiplicação matricial trabalhando em paralelo para calcular $f(x)$, $A(x)$ e $g(x)$;
-    - Unidade MACC Element-wise para fundir os três resultados no vetor de estado final $h(t)$.
+#### 📋 Critérios de Conclusão (DoD)
+- [ ] C++: reconstrução de trajetória física sintética (pêndulo/espiral) com erro MSE < 0.05.
+- [ ] NPU: pipeline de RK4 executa a integração temporal em ciclos determinísticos.
 
 ---
 
-### v7 — Quantized CfC
+### v5 — LTC (Liquid Time-Constant Core)
 
-> **Foco:** Compressão extrema do modelo CfC para operações com inteiros de 8 bits e representações ternárias/binárias.
+> **Foco**: redes bio-inspiradas com constantes de tempo adaptativas para séries temporais irregulares.
 
-#### 1. Módulo de Software (C++)
-- **Esquema de Quantização:**
-  - **INT8 Uniform Quantization:** $q = \text{round}\left(\frac{x}{S}\right) + Z$;
-  - **Ternary Weights:** $w \in \{-1, 0, +1\}$;
-  - **Quantization-Aware Training (QAT):** Straight-Through Estimator (STE) para passar gradientes pelas operações de arredondamento no treino C++.
-- **Substituição de Ativações Transcendentais:**
-  - Substituição de $e^{-x}$ por aproximações inteiras de ponto fixo (ex.: `Shift-Arithmetic` e aproximações racionais de Pade/LUT quantizada).
+#### 1. Software (C++)
+- Célula LTC com condutâncias sinápticas solúveis.
+- Otimizador AdamW com clipping rígido de gradientes (`|grad| <= 1.0`).
 
-#### 2. Requisitos para Execução
-- Modelo CfC mantendo $> 95\%$ do desempenho do modelo float32 original, reduzindo o tamanho dos pesos em até $4\times$ a $16\times$.
+#### 2. Hardware: `npu_liquid #(parameter MODE)`
+- Non-linear Exponential Solver Core para avaliação de sigmoides e exponenciais.
 
-#### 3. NPU Respectiva: **Quantized CfC NPU**
-- **Arquitetura:**
-  - **Bitwise / Popcount Arithmetic Core:** Sub-núcleos de multiplicação substituídos por multiplexadores e unidades de `popcount` para pesos ternários;
-  - **Fixed-Point Shift ALUs:** Operações de escala feitas inteiramente com *bit shifts* (sem multiplicadores de ponto flutuante);
-  - **Zero-Value Skipping:** Hardware que detecta pesos $0$ e pula a operação, economizando $100\%$ do consumo energético no ciclo.
+#### 📋 Critérios de Conclusão (DoD)
+- [ ] C++: predição de série temporal com amostragem irregular/gaps de dados superando baseline RNN.
+- [ ] NPU: registradores de feedback de estado interno atualizados sem corrupção.
 
 ---
 
-### v8 — Streaming CfC
+### v6 — CfC (Closed-Form Continuous-Time NPU)
 
-> **Foco:** Sistema em tempo real ponta a ponta (Edge Processing), com processamento assíncrono de eventos e baixíssimo consumo energético.
+> **Foco**: solução analítica em forma fechada para redes contínuas com complexidade O(1) na inferência.
 
-#### 1. Módulo de Software (C++)
-- **Recursos da Arquitetura:**
-  - **Event-Driven Streaming:** A rede aceita vetores de entrada com marcas de tempo arbitrárias $\Delta t = t_{\text{atual}} - t_{\text{anterior}}$;
-  - **State Memory Management:** O estado oculto $h$ é mantido de forma persistente e atualizado apenas quando novos eventos/leituras de sensores chegam;
-  - **Pipeline C++ de Latência Mínima:** Ring buffers circularmente alocados, zero alocação dinâmica durante a inferência (`no-malloc`).
+#### 1. Software (C++)
+- Célula CfC em forma fechada: `h(t) ≈ (f(x, h0) ⊙ e^(-[A(x, h0) + b] * t)) + g(x, h_0)`.
+- Ativação SiLU/Swish e Tanh com treino QAT.
 
-#### 2. Requisitos para Execução
-- Processamento de dados de sensores (ex.: IMU, ECG, ou Event Cameras) em tempo real streaming.
+#### 2. Hardware: `npu_cfc #(parameter MODE)`
+- Fast Closed-Form Engine (CFE) com 3 sub-blocos matriciais paralelos e cálculo de e^(-x) em ponto fixo via CORDIC ou PWL.
 
-#### 3. NPU Respectiva: **Streaming Edge NPU**
-- **Arquitetura:**
-  - **Direct Sensor DMA Interface:** A NPU lê entradas diretamente da memória de periféricos/sensores sem intervenção da CPU;
-  - **Timestamp Counter & Elapsed Calculator:** Timer de hardware dedicado que injeta $\Delta t$ diretamente na entrada da unidade CfC;
-  - **Persistent State SRAM Ring Buffer:** Memória ultra-rápida de baixo vazamento elétrico (*low-leakage SRAM*) para manter o estado $h(t)$ com a NPU em estado de dormência (*sleep mode*) entre eventos;
-  - **Wake-on-Event Logic:** A NPU só ativa seus barramentos quando um novo dado chega ao buffer de entrada.
+#### 📋 Critérios de Conclusão (DoD)
+- [ ] C++: modelo CfC atinge paridade de acurácia com LTC no problema de controle, mas com inferência O(1) sem passos do solver.
+- [ ] NPU: avaliação de h(t) executada em número fixo de ciclos determinísticos por amostra.
 
 ---
 
-## Métricas de Validação de NPU
+### v7 — Sparsidade & Eficiência Energética (CfC Otimizada)
 
-Para cada versão da NPU desenvolvida no projeto, os seguintes relatórios e simulações devem ser produzidos:
+> **Foco**: compressão e zeragem de computação para o modelo CfC em modo Ternário e INT8.
 
-1. **Cycle-Count Parity:** Comparação do resultado numérico obtido pelo software C++ versus o resultado do emulador da NPU (diferença máxima permitida: $10^{-5}$ em float, $0$ erros em quantizado).
-2. **Memory Bandwidth & Footprint:** Quantidade de bytes transferidos da RAM para a NPU por inferência.
-3. **MAC Utilization Rate:** Porcentagem de ciclos em que os multiplicadores da NPU estão ocupados (alvo: $> 80\%$).
+#### 1. Software (C++)
+- Treino com indução de esparsidade (Sparsity-Aware QAT) forçando grande percentual de pesos nulos (`w = 0`).
+- Exportador de densidade com empacotamento denso (16 pesos ternários de 2 bits por palavra de 32 bits).
+
+#### 2. Hardware: `npu_cfc_sparse #(parameter MODE)`
+- **Zero-Value Skipping**: circuito que detecta pesos `0` e pula aoperação no ciclo de clock.
+- Lógica de empacotamento e desempacotamento de bits na leitura da SRAM.
+
+#### 📋 Critérios de Conclusão (DoD)
+- [ ] C++: modelo CfC ternário esparso retém >= 95% da acurácia do modelo Q8.24 em tarefa de controle.
+- [ ] NPU: redução mensurável de ciclos de clock proporcional ao percentual de pesos nulos.
+
+---
+
+### v8 — Streaming Edge & Standby Ativo
+
+> **Foco**: processamento assíncrono direto de sensores de borda com consumo de miliwatts.
+
+#### 1. Software (C++)
+- Pipeline orientado a eventos com zero alocação dinâmica (`no-malloc`).
+
+#### 2. Hardware: `npu_streaming #(parameter MODE)`
+- Interface Direct Sensor DMA lendo diretamente do barramento do sensor inercial/ECG.
+- Counter de tempo injetando o variação temporal `dt` automaticamente no cálculo da CfC.
+- **Wake-on-Event Logic**: NPU em estado de sono (*sleep mode*) mantendo o estado na SRAM, despertando apenas na chegada de novo evento.
+
+#### 📋 Critérios de Conclusão (DoD)
+- [ ] C++: código de inferência compila sem warnings de alocação de memória e executa em tempo real.
+- [ ] NPU: simulação no `tb.sv` demonstra o ciclo de *sleep -> wake -> inferência -> sleep*.
+
+---
+
+## 📐 Framework de Co-Design Benchmarking *(Em Definição pela Equipe)*
+
+> ⚠️ **Status**: a equipe está estudando a melhor forma gráfica/interativa
+> de apresentar esses dados. As métricas mínimas obrigatórias a cada versão são:
+
+1. **Paridade Numérica**: 0 erros de bit entre C++ e SystemVerilog.
+2. **Memória**: bytes ocupados no arquivo `.mem`.
+3. **Ciclos/Clock**: ciclos medidos no `tb.sv` por inferência.
+
+---
+
+## 📚 Referências Bibliográficas
+
+1. **CfC (Closed-Form Continuous-time Networks)**:
+   Hasani, R., Lechner, M., Amini, A., Rus, D. et al. *"Closed-form continuous-time neural networks"*. Nature Machine Intelligence, vol. 4, pp. 992–1003, 2022.
+2. **LTC (Liquid Time-Constant Networks)**:
+   Hasani, R., Lechner, M. et al. *"Liquid Time-constant Networks"*. AAAI Conference on Artificial Intelligence, 2021.
+3. **QAT (Quantization-Aware Training)**:
+   Jacob, B. et al. *"Quantization and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference"*. CVPR, 2018.
+4. **Pesos Ternários**:
+   Li, F., Zhang, B., Liu, B. *"Ternary Weight Networks"*. arXiv:1605.04711, 2016.
+   Ma, S. et al. *"The Era of 1-bit LLMs: All Large Language Models are in 1.58 Bits"*. Microsoft Research, 2024.
