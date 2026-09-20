@@ -1,3 +1,9 @@
 build/
 .cache/
 .direnv/
+.omo/
+
+
+# Added by cargo
+
+/target
