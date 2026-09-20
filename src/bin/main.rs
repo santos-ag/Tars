@@ -1,4 +1,4 @@
-use tars::{cost,optimizer};
+use tars::*;
 const DATA_TR:[[f32;2];5] = [[1.0,2.0],[2.0,4.0],[5.0,10.0],[0.0,0.0],[-2.0,-4.0]];
 
 fn main() {

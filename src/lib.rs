@@ -1,3 +1,9 @@
+#[derive(Clone,Copy,Debug)]
+pub struct Data<const IN: usize,const OUT:usize>{
+    pub input: [f32;IN],
+    pub target: [f32;OUT]
+}
+
 pub fn cost(w:f32,data:&[[f32;2]])->f32{
     let mut loss = 0.0;
     for [x,y] in data{
