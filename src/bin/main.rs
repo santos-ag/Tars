@@ -1,21 +1,23 @@
 use tars::*;
-const DATA_TR:[Data;4] = [
+const DATA_TR:&[Data<2,1>] = &[
    Data::new([0.0,0.0],[0.0]),
    Data::new([1.0,0.0],[1.0]),
    Data::new([0.0,1.0],[1.0]),
    Data::new([1.0,1.0],[1.0])
 ];
-
 fn main() {
     const LR:f32 = 1e1;
     const EPOCHS:usize = 100000;
-    let mut model=Model{
-        weights:[
-            rand::random(),
-            rand::random()
-        ],
-        bias:[rand::random();1]
-    };
+    let mut model=Model::new(
+        Layer::new(
+
+            [[
+                rand::random(),
+                rand::random()
+            ]],
+            [rand::random();1]
+        )
+    );
     let optimizer = BGD::new(LR);
     let mut prev_cost = cost(&model,&DATA_TR);
             println!("epoch: 000000, cost is:{:014.8}",prev_cost);
