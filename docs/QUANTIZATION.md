@@ -13,8 +13,8 @@ float32 e quantizado só no final. Isso causa perdas severas de acurácia, espec
 em redes pequenas e em representações extremas como a ternária.
 
 No `tars-ml`, adotamos o **Quantization-Aware Training (QAT)**:
-- **Forward Pass no C++**: o modelo simula exatamente a aritmética discretizada do hardware.
-- **Backward Pass no C++**: usa o **Straight-Through Estimator (STE)** para passar os gradientes
+- **Forward Pass no Rust**: o modelo simula exatamente a aritmética discretizada do hardware.
+- **Backward Pass no Rust**: usa o **Straight-Through Estimator (STE)** para passar os gradientes
   através de operações não-deriváveis (arredondamentos e limiares):
   `d(quant(w)) / dw ≈ 1`
 - **Resultado**: os pesos aprendem a compensar a baixa precisão durante o próprio treino,
@@ -40,18 +40,18 @@ No `tars-ml`, adotamos o **Quantization-Aware Training (QAT)**:
 ### 1. Ponto Fixo Q8.24 (Modo Âncora)
 - **Conceito**: número inteiro de 32 bits em complemento de dois, onde os 24 bits inferiores
   representam a parte fracionária (`escala = 2^24 = 16777216`).
-- **Conversão float ↔ Q8.24 em C++**:
-  ```cpp
-  int32_t float_para_q8_24(float v) {
-      float clamped = std::max(-128.0f, std::min(127.9999f, v));
-      return static_cast<int32_t>(roundf(clamped * 16777216.0f));
+- **Conversão f32 ↔ Q8.24 em Rust**:
+  ```rust
+  pub fn f32_para_q8_24(v: f32) -> i32 {
+      let clamped = v.clamp(-128.0, 127.9999);
+      (clamped * 16777216.0).round() as i32
   }
 
-  float q8_24_para_float(int32_t v) {
-      return static_cast<float>(v) / 16777216.0f;
+  pub fn q8_24_para_f32(v: i32) -> f32 {
+      (v as f32) / 16777216.0
   }
   ```
-- **Treino QAT em Q8.24**: no forward pass, após cada operação em float, o C++ trunca o
+- **Treino QAT em Q8.24**: no forward pass, após cada operação em float/f32, o Rust trunca o
   resultado para a precisão equivalente de 24 bits fracionários. Isso garante que o treino
   não dependa da precisão extra de 32/64 bits da CPU.
 

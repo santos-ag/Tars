@@ -1,7 +1,7 @@
 # tars-ml — Documentação (Índice)
 
 `tars-ml` é uma **biblioteca TinyML de Co-Design Hardware/Software**: treine redes neurais
-pequenas em C++17 puro (zero dependências), e faça o deploy delas em uma NPU
+pequenas em Rust (Edition 2024, zero dependências de ML além do runtime padrão e rand), e faça o deploy delas em uma NPU
 parametrizada em SystemVerilog ou em qualquer microcontrolador via runtime de
 inferência portátil em ponto fixo.
 
@@ -19,7 +19,7 @@ inferência portátil em ponto fixo.
 | 2 | [ARCHITECTURE.md](ARCHITECTURE.md) | Visão geral, os 3 pilares, casos de uso TinyML |
 | 3 | [ROADMAP_NPU.md](ROADMAP_NPU.md) | Progressão v0 → v8 com critérios de conclusão (DoD) por versão |
 | 4 | [QUANTIZATION.md](QUANTIZATION.md) | Os 3 modos numéricos (Q8.24, INT8, Ternário), QAT, política de acumulador e spec da SFU |
-| 5 | [MEM_FORMAT.md](MEM_FORMAT.md) | Especificação do formato `.mem` (contrato C++ ↔ SystemVerilog) |
+| 5 | [MEM_FORMAT.md](MEM_FORMAT.md) | Especificação do formato `.mem` (contrato Rust ↔ SystemVerilog) |
 | 6 | [DECISIONS.md](DECISIONS.md) | Registro de decisões de arquitetura (ADRs) — o "porquê" de cada escolha |
 
 > 💡 **Perdeu o fio da meada?** Comece sempre pelo [STATUS.md](STATUS.md) — ele
