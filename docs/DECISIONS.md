@@ -112,3 +112,34 @@ simulador SystemVerilog.
 ### Decisão
 Usar arquivos em formato de texto hexadecimal legíveis nativamente pelo `$readmemh` do Verilog,
 com um cabeçalho de palavras contendo o número de camadas e a topologia (ver [MEM_FORMAT.md](MEM_FORMAT.md)).
+
+---
+
+## ADR-008: Arquitetura Desacoplada de Visualização & Observabilidade
+
+### Contexto
+Para demonstrar, depurar e comparar a execução de redes neurais e aceleração em hardware (Pilar 3 — Co-Design Benchmarking),
+surgiu a necessidade de ferramentas gráficas ricas (grafos de rede via Cytoscape/ELK, dashboards de métricas via ECharts,
+inspetor de arquivos `.mem` e mapeamento interativo software ↔ NPU). Existia o risco de poluir o núcleo matemático da biblioteca
+com bibliotecas web, serialização JSON e conexões WebSocket.
+
+### Alternativas Consideradas
+- **Embutir visualização diretamente no core**: adicionar métodos de exportação web, endpoints HTTP ou clientes WebSocket dentro de `tars-core`.
+  *Rejeitado*: violaria os princípios de código enxuto, quebraria a compatibilidade futura com `no_std`, aumentaria o tempo de compilação
+  e traria dependências externas indesejadas para um runtime TinyML.
+- **Visualizador totalmente desconectado sem protocolo formal**: gerar saídas ad-hoc de texto parseadas por scripts soltos em Python/JS.
+  *Rejeitado*: frágil a mudanças de formato e sem garantias de tipagem ou evolução controlada.
+- **Protocolo de observabilidade agnóstico em crate dedicada (`tars-viz-protocol`) com separação estrita de crates**:
+  o visualizador depende do core; o core NUNCA depende do visualizador.
+
+### Decisão
+Adotar a **arquitetura desacoplada com regra de dependência unidirecional** (ver [VISUALIZATION.md](VISUALIZATION.md)):
+1. O runtime matemático (`tars-core`) permanece puro, sem qualquer dependência web, JSON ou de rede, mantendo compatibilidade com `no_std`.
+2. Criar uma crate intermediária de tipos agnósticos (`tars-viz-protocol`) contendo representações canônicas (`GraphNode`, `ModelGraph`, `BenchmarkRecord`, etc.).
+3. Desenvolver o visualizador web e o servidor em crates e diretórios separados (`crates/tars-viz-web`, `crates/tars-viz-server`).
+4. Permitir que o visualizador seja completamente removido do repositório sem impactar a compilação ou execução do core (Teste da Deleção Total).
+
+### Consequências
+- A biblioteca central pode ser instalada com `cargo add tars` em sua forma mais enxuta possível.
+- Usuários que desejam a interface gráfica podem instalar a ferramenta separadamente (`cargo install tars-viz`) ou rodá-la no monorepo (`cargo run -p tars-viz-server`).
+- A visualização ganha liberdade total para construir interfaces avançadas (inspeção hierárquica LOD 1 a 5, co-design lado a lado software ↔ NPU, inspeção bit a bit de `.mem`) sem degradar a pureza do motor de aprendizado.

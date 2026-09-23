@@ -21,6 +21,7 @@ inferência portátil em ponto fixo.
 | 4 | [QUANTIZATION.md](QUANTIZATION.md) | Os 3 modos numéricos (Q8.24, INT8, Ternário), QAT, política de acumulador e spec da SFU |
 | 5 | [MEM_FORMAT.md](MEM_FORMAT.md) | Especificação do formato `.mem` (contrato Rust ↔ SystemVerilog) |
 | 6 | [DECISIONS.md](DECISIONS.md) | Registro de decisões de arquitetura (ADRs) — o "porquê" de cada escolha |
+| 7 | [VISUALIZATION.md](VISUALIZATION.md) | Arquitetura de visualização e benchmarking desacoplada (`tars-viz`) |
 
 > 💡 **Perdeu o fio da meada?** Comece sempre pelo [STATUS.md](STATUS.md) — ele
 > aponta onde o projeto parou e qual é o próximo passo mínimo.
@@ -45,6 +46,7 @@ inferência portátil em ponto fixo.
 | **DoD** | Definition of Done — critérios objetivos de conclusão de uma versão |
 | **GEMM** | General Matrix Multiply — multiplicação de matrizes otimizada |
 | **LTC** | Liquid Time-Constant Network — rede de tempo contínuo com constante de tempo adaptativa |
+| **LOD** | Level of Detail — níveis hierárquicos de detalhe do visualizador (1: modelo → 5: bit individual) |
 | **LUT** | Lookup Table — tabela de consulta em hardware |
 | **MAC** | Multiply-Accumulate — operação fundamental: acc ← acc + (a × b) |
 | **NPU** | Neural Processing Unit — processador dedicado a redes neurais |

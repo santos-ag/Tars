@@ -16,9 +16,9 @@ ASICs dedicados), onde frameworks como PyTorch/TensorFlow e GPUs não entram.
  │ PILAR 1: Engine Rust (2024)│ PILAR 2: IP Core NPU       │ PILAR 3:       │
  │ (Treino, QAT & Runtime)    │ (SystemVerilog)            │ Co-Design      │
  │                            │                            │ Benchmarking   │
- │ • Zero dependências ML     │ • Sintetizável (FPGA/ASIC) │   (EM DEFINIÇÃO│
- │ • Treino QAT direto:       │ • Módulo Parametrizado     │    PELA EQUIPE)│
- │   - Q8.24 (Ponto Fixo 32b) │   (`parameter MODE`)       │                │
+ │ • Zero dependências ML     │ • Sintetizável (FPGA/ASIC) │ • Via tars-viz │
+ │ • Treino QAT direto:       │ • Módulo Parametrizado     │   (ferramenta  │
+ │   - Q8.24 (Ponto Fixo 32b) │   (`parameter MODE`)       │   externa)      │
  │   - INT8 QAT (8 bits)      │ • Multiplicador Q8/INT8    │ • Acurácia (%) │
  │   - Ternário (-1, 0, +1)   │ • Mux 3:1 p/ Ternário      │ • Memória (B)  │
  │ • Runtime Rust de inferên- │ • CFE p/ CfC (v6-v8)       │ • Ciclos/Clock │
@@ -55,13 +55,20 @@ ASICs dedicados), onde frameworks como PyTorch/TensorFlow e GPUs não entram.
   - `TERNARY`: substituição dos multiplicadores por **Multiplexadores 3:1** (se peso=+1 passa entrada; se peso=-1 inverte entrada; se peso=0 zera).
   - `v6-v8`: incorpora a **Unidade de Forma Fechada (CFE)** para redes CfC.
 
-### 3. Framework de Co-Design Benchmarking *(Em Definição pela Equipe)*
-> ⚠️ **Status**: a equipe está atualmente estudando a melhor forma gráfica/interativa
-> de apresentar os benchmarks da rede. As métricas-alvo planejadas são:
+### 3. Framework de Co-Design Benchmarking & Observabilidade (`tars-viz`)
+> 💡 **Arquitetura Formalizada**: a observabilidade e benchmarking são tratados como uma **ferramenta externa**
+> ao motor do Tars (ver especificação completa em [VISUALIZATION.md](VISUALIZATION.md) e ADR-008 em [DECISIONS.md](DECISIONS.md)).
+> A regra inegociável é: $\boxed{\text{visualizer depende do core; core nunca depende do visualizer}}$.
+> O `tars-core` não possui dependências web nem de serialização, preservando a compatibilidade com `no_std`.
+
+As métricas-alvo e capacidades do ecossistema visual incluem:
 - **Acurácia (%) por Modo**: Q8.24 vs INT8 QAT vs Ternário QAT.
 - **Pegada de Memória (Bytes)**: tamanho dos pesos exportados em cada formato.
 - **Métricas de Síntese e Simulação**: contagem de LUTs/DSPs e ciclos de clock por inferência no testbench.
 - **Paridade Software ↔ Hardware**: validação com zero erros de divergência entre a execução em Rust e a simulação em SystemVerilog.
+- **Inspeção de Co-Design**: mapeamento interativo camada a camada entre o modelo em Rust e os blocos ativos da NPU.
+- **Inspetor de Memória `.mem`**: alternância dinâmica entre Float, Q8.24, INT8, Hexadecimal e Binário.
+- **Níveis de Detalhe (LOD 1 a 5)**: exploração escalável que vai da arquitetura global da rede até o bit individual do peso.
  
  ---
  
