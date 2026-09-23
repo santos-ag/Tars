@@ -33,4 +33,16 @@ impl Module for Layer{
         output
     }
 }
-
+impl Module for Layer{
+    fn forward(&self,input:&[f32])->Vec<f32>{
+        let mut output = vec![0.0;self.out_sz];
+        for i in 0..self.out_sz{
+            output[i] = self.bias[i];
+            for j in 0..self.in_sz{
+                output[i]+=input[j]*self.weights[i][j];
+            }
+            output[i] = sigmoidf(output[i]);
+        }
+        output
+    }
+}
