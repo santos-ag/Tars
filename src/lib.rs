@@ -11,20 +11,16 @@ pub use model::*;
 pub mod math;
 pub use math::*;
 
-pub fn cost<const IN:usize,const OUT:usize>(model:&Model,data:&[Data<IN,OUT>])->f32{
+pub fn cost<const IN: usize, const OUT: usize>(model: &Model, data: &[Data<IN, OUT>]) -> f32 {
     let mut loss = 0.0;
-    for sample in data{
+    for sample in data {
         let mut erro = 0.0;
         let target = &sample.target;
         let pred = model.forward(&sample.input);
-        for i in 0..OUT{
-            erro += (target[i]-pred[i])*(target[i]-pred[i]);
+        for i in 0..OUT {
+            erro += (target[i] - pred[i]) * (target[i] - pred[i]);
         }
-        loss+=erro/(OUT as f32);
+        loss += erro / (OUT as f32);
     }
-    loss/data.len()as f32
+    loss / data.len() as f32
 }
-
-
-
-
