@@ -24,29 +24,29 @@ em Ponto Fixo de 32 bits.
 Adotar **Q8.24** como formato âncora obrigatório de todas as versões do projeto.
 
 ### Consequências
-- A resolução de 24 bits fracionários é **praticamente idêntica à mantissa do float32** do C++
+- A resolução de 24 bits fracionários é **praticamente idêntica à mantissa do f32** do Rust
   (23 bits), garantindo que a perda de precisão em relação ao ponto flutuante é imperceptível.
 - A faixa de -128 a +127 dá margem segura para pesos, biases e ativações.
 - Para evitar overflow no acúmulo de somatórios longos, a NPU usará um acumulador estendido de 48 bits.
 
 ---
 
-## ADR-002: Manter C++ e SystemVerilog no Mesmo Repositório (Monorepo)
+## ADR-002: Manter Rust e SystemVerilog no Mesmo Repositório (Monorepo)
 
 ### Contexto
 Houve dúvida sobre se a NPU em SystemVerilog deveria ser movida para um repositório separado
-do engine C++.
+do engine Rust.
 
 ### Decisão
 **Manter tudo em um único repositório (Monorepo).**
 
 ### Razões
-1. **Atomicidade no Co-Design**: qualquer alteração no formato de exportação de pesos no C++
+1. **Atomicidade no Co-Design**: qualquer alteração no formato de exportação de pesos no Rust
    quebraria a NPU no mesmo instante se os projetos fossem separados.
-2. **Co-Simulação Automatizada**: o testbench `tb.sv` roda no mesmo pipeline do C++, executando
-   o treino, exportando o `.mem` e validando a paridade de bits em um único comando.
+2. **Co-Simulação Automatizada**: o testbench `tb.sv` roda no mesmo pipeline do Rust, executando
+   o treino, exportando o `.mem` e validando a paridade de bits em um único comando (via `cargo`/scripts).
 3. **Identidade do Projeto**: o `tars-ml` é uma solução completa de Co-Design Hardware/Software;
-   separá-lo reduziria o C++ a "mais uma biblioteca" e o Verilog a "mais um multiplicador".
+   separá-lo reduziria o Rust a "mais uma biblioteca" e o Verilog a "mais um multiplicador".
 
 ---
 
@@ -57,11 +57,11 @@ Quantização aplicada após o treino (Post-Training Quantization - PTQ) degrada
 especialmente em modelos ternários.
 
 ### Decisão
-Implementar **Quantization-Aware Training (QAT)** desde o engine de treino em C++, aplicando
+Implementar **Quantization-Aware Training (QAT)** desde o engine de treino em Rust, aplicando
 a discretização no forward pass com Straight-Through Estimator (STE) no backward pass.
 
 ### Razões
-- Permite que o C++ treine modelos em Q8.24, INT8 e Ternário que já nascem adaptados às limitações
+- Permite que o Rust treine modelos em Q8.24, INT8 e Ternário que já nascem adaptados às limitações
   do hardware, preservando a acurácia final.
 
 ---
@@ -98,7 +98,7 @@ chamada "Quantized CfC") perdeu seu propósito original.
 
 ### Decisão
 Re-escopar a v7 para **"v7 — Sparsidade & Eficiência Energética (CfC Otimizada)"**, focando em:
-- Indução de pesos nulos (Sparsity QAT) no C++.
+- Indução de pesos nulos (Sparsity QAT) no Rust.
 - Lógica de **Zero-Value Skipping** (pular ciclos com peso 0) e empacotamento denso de bits na NPU.
 
 ---
@@ -106,7 +106,7 @@ Re-escopar a v7 para **"v7 — Sparsidade & Eficiência Energética (CfC Otimiza
 ## ADR-007: Contrato de Memória `.mem` em Texto Hexadecimal Padrão
 
 ### Contexto
-O C++ precisava de um formato simples e universal para enviar os pesos treinados para o
+O Rust precisava de um formato simples e universal para enviar os pesos treinados para o
 simulador SystemVerilog.
 
 ### Decisão

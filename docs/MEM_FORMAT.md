@@ -1,6 +1,6 @@
 # tars-ml — Especificação do Formato de Memória (`.mem`)
 
-Este documento estabelece o **contrato de interface entre o C++ (Exporter)** e o
+Este documento estabelece o **contrato de interface entre o Rust (Exporter)** e o
 **SystemVerilog (NPU / Testbench)**. Ele especifica como pesos, biases e vetores de teste
 são salvos em disco para serem lidos pelo comando `$readmemh` do SystemVerilog.
 
@@ -8,13 +8,13 @@ são salvos em disco para serem lidos pelo comando `$readmemh` do SystemVerilog.
 
 ## 📄 Visão Geral dos Arquivos
 
-Para cada modelo treinado, o C++ gera 3 arquivos de texto hexadecimal na pasta de build:
+Para cada modelo treinado, o Rust gera 3 arquivos de texto hexadecimal na pasta de build:
 
 | Arquivo | Conteúdo | Usado por |
 | :--- | :--- | :--- |
 | `model.mem` | Cabeçalho de topologia + todos os pesos e biases ordenados por camada | NPU (`npu_core.sv`) |
 | `input.mem` | Vetores de entrada de teste | Testbench (`tb.sv`) |
-| `expected.mem` | Saídas esperadas calculadas pelo C++ para validação de paridade | Testbench (`tb.sv`) |
+| `expected.mem` | Saídas esperadas calculadas pelo Rust para validação de paridade | Testbench (`tb.sv`) |
 
 ---
 
@@ -93,9 +93,9 @@ Para validar a NPU no testbench:
 00000000    // In[1] = 0.0
 ```
 
-### `expected.mem` (Saída esperada do C++ para a mesma entrada)
+### `expected.mem` (Saída esperada do Rust para a mesma entrada)
 ```text
-// Saida esperada do C++ para XOR [1.0, 0.0]
+// Saida esperada do Rust para XOR [1.0, 0.0]
 00FC0000    // Out[0] ≈ +0.984 em Q8.24
 ```
 
@@ -110,7 +110,7 @@ module tb;
     logic signed [31:0] expected_out [0:15];
 
     initial begin
-        // Carrega os arquivos gerados pelo Exporter C++
+        // Carrega os arquivos gerados pelo Exporter Rust
         $readmemh("build/model.mem", model_ram);
         $readmemh("build/input.mem", test_input);
         $readmemh("build/expected.mem", expected_out);

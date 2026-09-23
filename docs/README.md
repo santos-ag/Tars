@@ -30,9 +30,9 @@ inferência portátil em ponto fixo.
 ## 🧭 Princípios do Projeto
 
 1. **Código 100% humano** — agentes de IA não escrevem código aqui (ver [AGENTS.md](../AGENTS.md)).
-2. **Zero bibliotecas externas de ML** — toda álgebra, otimizadores e ativações escritos à mão em C++17 e SystemVerilog.
+2. **Zero bibliotecas externas de ML** — toda álgebra, otimizadores e ativações escritos à mão em Rust (Edition 2024) e SystemVerilog.
 3. **Treino na precisão alvo (QAT)** — o modelo aprende já em Q8.24 / INT8 / Ternário, não é convertido depois.
-4. **Paridade zero-erro como lei** — o que o C++ calcula, a NPU reproduz bit a bit.
+4. **Paridade zero-erro como lei** — o que o Rust calcula, a NPU reproduz bit a bit.
 
 ---
 

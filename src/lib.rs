@@ -8,30 +8,21 @@ pub mod grad;
 pub use grad::*;
 pub mod model;
 pub use model::*;
+pub mod math;
+pub use math::*;
 
-
-
-
-
-
-
-pub fn sigmoidf(x:f32)->f32{
-    1.0/(1.0+(-x).exp())
-}
-pub fn forward<const IN:usize>(model: &Model<IN>,input:[f32;IN])->f32{
-    let mut z = model.layer1.bias[0];
-    for i in 0..model.layer1.weights[0].len(){
-        z+=input[i]*model.layer1.weights[0][i];
-    }
-    sigmoidf(z)
-}
-pub fn cost<const IN:usize,const OUT:usize>(model:&Model<IN>,data:&[Data<IN,OUT>])->f32{
+pub fn cost<const IN:usize,const OUT:usize>(model:&Model,data:&[Data<IN,OUT>])->f32{
     let mut loss = 0.0;
     for sample in data{
-        let erro = sample.target[0]-forward(model,sample.input);
-        loss += erro*erro;
+        let mut erro = 0.0;
+        let target = &sample.target;
+        let pred = model.forward(&sample.input);
+        for i in 0..OUT{
+            erro += (target[i]-pred[i])*(target[i]-pred[i]);
+        }
+        loss+=erro/(OUT as f32);
     }
-    loss
+    loss/data.len()as f32
 }
 
 

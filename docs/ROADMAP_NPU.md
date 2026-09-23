@@ -1,7 +1,7 @@
 # tars-ml — Roteiro de Evolução & Co-Design Hardware/Software
 
 Este documento estabelece o plano de evolução incremental do `tars-ml`:
-desde os fundamentos de álgebra linear em C++17 até a síntese de **NPUs dedicadas em SystemVerilog**
+desde os fundamentos de álgebra linear em Rust (Edition 2024) até a síntese de **NPUs dedicadas em SystemVerilog**
 para redes neurais de tempo contínuo (*Closed-form Continuous-time Neural Networks — CfC*).
 
 ---
@@ -11,7 +11,7 @@ para redes neurais de tempo contínuo (*Closed-form Continuous-time Neural Netwo
 - [Índice & Glossário (`README.md`)](README.md)
 - [Visão Geral da Arquitetura (`ARCHITECTURE.md`)](ARCHITECTURE.md) — Os 3 pilares e casos de uso TinyML.
 - [Precisão Numérica & QAT (`QUANTIZATION.md`)](QUANTIZATION.md) — Modos Q8.24, INT8 e Ternário.
-- [Formato de Memória `.mem` (`MEM_FORMAT.md`)](MEM_FORMAT.md) — Contrato de exportação C++ ↔ Verilog.
+- [Formato de Memória `.mem` (`MEM_FORMAT.md`)](MEM_FORMAT.md) — Contrato de exportação Rust ↔ Verilog.
 - [Onde Estamos Agora (`STATUS.md`)](STATUS.md) — Estado atual do código e próximo passo.
 - [Decisões de Arquitetura (`DECISIONS.md`)](DECISIONS.md) — O registro de ADRs do projeto.
 
@@ -23,7 +23,7 @@ To manter a progressão fluida e evitar travamentos:
 
 1. **Modo Âncora (`Q8_24`)**: é o caminho crítico obrigatório de **todas as versões**.
    Toda versão deve ser concluída e validada em `Q8_24` antes de avançar.
-2. **Modos Estendidos (`INT8` e `TERNARY`)**: o C++ e a NPU suportam a capacidade em todas
+2. **Modos Estendidos (`INT8` e `TERNARY`)**: o Rust e a NPU suportam a capacidade em todas
    as versões, mas a validação formal com critérios de aceitação (DoD) é exigida nos
    **marcos de destaque** (v0, v0.5, v1, v6 e v7).
 3. **Regra do "Não Empacar"**: se você travar na quantização/ternarização de uma versão complexa,
@@ -62,12 +62,12 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: álgebra linear contígua, backpropagation analítico, treino QAT e produto escalar na NPU.
 
-#### 1. Software (C++)
-- Classes `Matrix<T>` e `Vector<T>` com alocação contígua unidimensional em memória (`std::vector<T> data` indexado por `row * cols + col`).
+#### 1. Software (Rust)
+- Structs de tensores/matrizes (ex.: `Matrix<T>`, `Layer<const IN: usize, const OUT: usize>`) com alocação contígua em memória ou const generics.
 - Multiplicação matricial, soma vetorial, produto Hadamard e transposição.
 - Derivadas analíticas para Sigmoid `sigma'(x) = sigma(x)(1 - sigma(x))` e ReLU `f'(x) = (x > 0) ? 1 : 0`.
-- Treino QAT em Q8.24, INT8 e Ternário com STE.
-- Exportador `Exporter.hpp` gerando `model.mem`, `input.mem` e `expected.mem`.
+- Treino QAT em Q8.24, INT8 e Ternário com STE em Rust.
+- Exportador `exporter.rs` gerando `model.mem`, `input.mem` e `expected.mem`.
 
 #### 2. Hardware: `npu_core #(parameter MODE)`
 - Acumulador estendido de 48 bits para evitar overflow na acumulação Q8.24.
@@ -75,9 +75,9 @@ To manter a progressão fluida e evitar travamentos:
 - SFU com ReLU combinacional.
 
 #### 📋 Critérios de Conclusão (DoD - Definition of Done)
-- [ ] C++: treino do XOR (2->2->1) e Regressão Linear converge com erro MSE < 0.01 em `Q8_24`.
+- [ ] Rust: treino do XOR (2->2->1) e Regressão Linear converge com erro MSE < 0.01 em `Q8_24`.
 - [ ] Exporter: gera os arquivos `.mem` válidos no formato especificado em `MEM_FORMAT.md`.
-- [ ] NPU: simulação de produto escalar simples de 4 elementos no `tb.sv` bate com o C++ com **zero erros de divergência** nos 3 modos.
+- [ ] NPU: simulação de produto escalar simples de 4 elementos no `tb.sv` bate com o Rust com **zero erros de divergência** nos 3 modos.
 
 ---
 
@@ -89,11 +89,11 @@ To manter a progressão fluida e evitar travamentos:
 
 #### 1. Escopo de Co-Design
 - Executar a rede XOR (2->2->1) **inteira em hardware**, camada por camada, no SystemVerilog.
-- O testbench `tb.sv` lê o `model.mem` exportado pelo C++ e guia a NPU sequencialmente pelas 2 camadas.
+- O testbench `tb.sv` lê o `model.mem` exportado pelo Rust e guia a NPU sequencialmente pelas 2 camadas.
 
 #### 📋 Critérios de Conclusão (DoD)
 - [ ] NPU: executa a inferência completa das 4 combinações do XOR em SystemVerilog.
-- [ ] Paridade: resultado da NPU bate com a saída de `expected.mem` em `Q8_24` com **zero erros de bit**.
+- [ ] Paridade: resultado da NPU bate com a saída de `expected.mem` em `Q8_24` com **zero erros de bit** em relação ao Rust.
 - [ ] Relatório: registrado o número de ciclos de clock por inferência no `STATUS.md`.
 
 ---
@@ -102,7 +102,7 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: redes multicamadas densas, classificação no dataset MNIST e aceleração sistólica.
 
-#### 1. Software (C++)
+#### 1. Software (Rust)
 - `DenseLayer(in_features, out_features)`.
 - Softmax estável e Categorical Cross-Entropy (CCE) com gradiente analítico `grad = y_hat - y`.
 - Otimizador SGD com Momentum (`v_t = beta * v_{t-1} + lr * grad`).
@@ -124,7 +124,7 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: convoluções bidimensionais e processamento espacial com buffer de linha.
 
-#### 1. Software (C++)
+#### 1. Software (Rust)
 - `Conv2D`, `MaxPool2D`, `AvgPool2D`, `Flatten`.
 - Algoritmo `im2col` + GEMM adaptado aos modos de precisão.
 - Otimizador Adam (Adaptive Moment Estimation).
@@ -143,7 +143,7 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: sinais multicanais (RGB, vibração multi-eixo), BatchNorm e gerenciamento de memória.
 
-#### 1. Software (C++)
+#### 1. Software (Rust)
 - Convolução multicanal `Cin -> Cout`, `BatchNorm2D` (com fusão na inferência) e `SpatialDropout`.
 - Otimizador AdamW + Cosine Annealing Learning Rate Scheduler.
 - Loader nativo para dataset CIFAR-10.
@@ -161,16 +161,16 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: equações diferenciais ordinárias parametrizadas por redes neurais para trajetórias contínuas.
 
-#### 1. Software (C++)
+#### 1. Software (Rust)
 - Formulation: `dh(t)/dt = f_theta(h(t), t)`.
-- Solvers em C++: Euler e Runge-Kutta 4ª Ordem (RK4).
+- Solvers em Rust: Euler e Runge-Kutta 4ª Ordem (RK4).
 - Backpropagation via Adjoint State Method com QAT.
 
 #### 2. Hardware: `npu_ode #(parameter MODE)`
 - Integrator Pipeline Engine re-alimentando os 4 estágios do RK4 no núcleo matricial.
 
 #### 📋 Critérios de Conclusão (DoD)
-- [ ] C++: reconstrução de trajetória física sintética (pêndulo/espiral) com erro MSE < 0.05.
+- [ ] Rust: reconstrução de trajetória física sintética (pêndulo/espiral) com erro MSE < 0.05.
 - [ ] NPU: pipeline de RK4 executa a integração temporal em ciclos determinísticos.
 
 ---
@@ -179,7 +179,7 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: redes bio-inspiradas com constantes de tempo adaptativas para séries temporais irregulares.
 
-#### 1. Software (C++)
+#### 1. Software (Rust)
 - Célula LTC com condutâncias sinápticas solúveis.
 - Otimizador AdamW com clipping rígido de gradientes (`|grad| <= 1.0`).
 
@@ -187,7 +187,7 @@ To manter a progressão fluida e evitar travamentos:
 - Non-linear Exponential Solver Core para avaliação de sigmoides e exponenciais.
 
 #### 📋 Critérios de Conclusão (DoD)
-- [ ] C++: predição de série temporal com amostragem irregular/gaps de dados superando baseline RNN.
+- [ ] Rust: predição de série temporal com amostragem irregular/gaps de dados superando baseline RNN.
 - [ ] NPU: registradores de feedback de estado interno atualizados sem corrupção.
 
 ---
@@ -196,7 +196,7 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: solução analítica em forma fechada para redes contínuas com complexidade O(1) na inferência.
 
-#### 1. Software (C++)
+#### 1. Software (Rust)
 - Célula CfC em forma fechada: `h(t) ≈ (f(x, h0) ⊙ e^(-[A(x, h0) + b] * t)) + g(x, h_0)`.
 - Ativação SiLU/Swish e Tanh com treino QAT.
 
@@ -204,7 +204,7 @@ To manter a progressão fluida e evitar travamentos:
 - Fast Closed-Form Engine (CFE) com 3 sub-blocos matriciais paralelos e cálculo de e^(-x) em ponto fixo via CORDIC ou PWL.
 
 #### 📋 Critérios de Conclusão (DoD)
-- [ ] C++: modelo CfC atinge paridade de acurácia com LTC no problema de controle, mas com inferência O(1) sem passos do solver.
+- [ ] Rust: modelo CfC atinge paridade de acurácia com LTC no problema de controle, mas com inferência O(1) sem passos do solver.
 - [ ] NPU: avaliação de h(t) executada em número fixo de ciclos determinísticos por amostra.
 
 ---
@@ -213,7 +213,7 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: compressão e zeragem de computação para o modelo CfC em modo Ternário e INT8.
 
-#### 1. Software (C++)
+#### 1. Software (Rust)
 - Treino com indução de esparsidade (Sparsity-Aware QAT) forçando grande percentual de pesos nulos (`w = 0`).
 - Exportador de densidade com empacotamento denso (16 pesos ternários de 2 bits por palavra de 32 bits).
 
@@ -222,7 +222,7 @@ To manter a progressão fluida e evitar travamentos:
 - Lógica de empacotamento e desempacotamento de bits na leitura da SRAM.
 
 #### 📋 Critérios de Conclusão (DoD)
-- [ ] C++: modelo CfC ternário esparso retém >= 95% da acurácia do modelo Q8.24 em tarefa de controle.
+- [ ] Rust: modelo CfC ternário esparso retém >= 95% da acurácia do modelo Q8.24 em tarefa de controle.
 - [ ] NPU: redução mensurável de ciclos de clock proporcional ao percentual de pesos nulos.
 
 ---
@@ -231,8 +231,8 @@ To manter a progressão fluida e evitar travamentos:
 
 > **Foco**: processamento assíncrono direto de sensores de borda com consumo de miliwatts.
 
-#### 1. Software (C++)
-- Pipeline orientado a eventos com zero alocação dinâmica (`no-malloc`).
+#### 1. Software (Rust)
+- Pipeline orientado a eventos com zero alocação dinâmica (`no-malloc` / `no_std`).
 
 #### 2. Hardware: `npu_streaming #(parameter MODE)`
 - Interface Direct Sensor DMA lendo diretamente do barramento do sensor inercial/ECG.
@@ -240,7 +240,7 @@ To manter a progressão fluida e evitar travamentos:
 - **Wake-on-Event Logic**: NPU em estado de sono (*sleep mode*) mantendo o estado na SRAM, despertando apenas na chegada de novo evento.
 
 #### 📋 Critérios de Conclusão (DoD)
-- [ ] C++: código de inferência compila sem warnings de alocação de memória e executa em tempo real.
+- [ ] Rust: código de inferência compila sem warnings de alocação de memória e executa em tempo real.
 - [ ] NPU: simulação no `tb.sv` demonstra o ciclo de *sleep -> wake -> inferência -> sleep*.
 
 ---
@@ -250,7 +250,7 @@ To manter a progressão fluida e evitar travamentos:
 > ⚠️ **Status**: a equipe está estudando a melhor forma gráfica/interativa
 > de apresentar esses dados. As métricas mínimas obrigatórias a cada versão são:
 
-1. **Paridade Numérica**: 0 erros de bit entre C++ e SystemVerilog.
+1. **Paridade Numérica**: 0 erros de bit entre Rust e SystemVerilog.
 2. **Memória**: bytes ocupados no arquivo `.mem`.
 3. **Ciclos/Clock**: ciclos medidos no `tb.sv` por inferência.
 

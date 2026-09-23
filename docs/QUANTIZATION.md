@@ -62,7 +62,7 @@ No `tars-ml`, adotamos o **Quantization-Aware Training (QAT)**:
 - **Equação de Quantização Simétrica**:
   `q = clamp(round(w / S), -128, 127)`
   onde `S` é a escala calculada por camada (`S = max(|w|) / 127`).
-- **Forward Pass no C++**:
+- **Forward Pass no Rust**:
   `w_quant = clamp(round(w / S), -128, 127) * S`
 - **Requantização na NPU**: a saída do acumulador de 32 bits é multiplicada por uma escala de
   requantização de ponto fixo antes de ser enviada para a próxima camada.
@@ -93,9 +93,9 @@ No `tars-ml`, adotamos o **Quantization-Aware Training (QAT)**:
 
 ---
 
-## 🛡️ Política de Acumulador e Saturação (Contrato Paridade C++ ↔ NPU)
+## 🛡️ Política de Acumulador e Saturação (Contrato Paridade Rust ↔ NPU)
 
-Para garantir **zero erro de divergência de bits** entre o C++ e o SystemVerilog:
+Para garantir **zero erro de divergência de bits** entre o Rust e o SystemVerilog:
 
 ### 1. Largura do Acumulador
 - **Q8.24**: um acumulador de 32 bits pode estourar (overflow) se somar mais de 128 produtos
@@ -108,7 +108,7 @@ Para garantir **zero erro de divergência de bits** entre o C++ e o SystemVerilo
 Ao final da acumulação, a NPU reduz o resultado estendido para os 32 bits finais:
 - Se o valor ultrapassar `+127.9999` (ou `0x7FFFFFFF`), ele é **saturado no máximo positivo**.
 - Se for menor que `-128.0` (ou `0x80000000`), ele é **saturado no mínimo negativo**.
-- O simulador C++ deve implementar a exata mesma regra de saturação.
+- O simulador/runtime Rust deve implementar a exata mesma regra de saturação.
 
 ---
 

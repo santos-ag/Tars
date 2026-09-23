@@ -18,14 +18,15 @@ e o checklist do próximo passo imediato para a equipe não "perder o fio da mea
 
 ## 🔎 Inventário do Código Existente no Repositório
 
-### 1. Módulo C++ (`src/`)
-- `Types.hpp`: aliases de tipos padrão (`f32`, `i32`, `v<T>`, `m<T>`).
-- `Math.hpp`/`Math.cpp`: funções de utilidade contendo `sigmoidf(x)`, `ReLU(x)` e gerador aleatório.
-- `Layer.hpp`: struct de camada densa usando `std::vector<std::vector<float>>` inicializada com pesos em `[-1, 1]`.
-- `NeuralNetwork.hpp`/`NeuralNetwork.cpp`: classe de rede sequencial com método `forward` usando Sigmoid rígida em todas as camadas. Topologia configurável.
-- `Train_conf.hpp`: configurações globais (`epochs=10000`, `lr=10`, `h=0.0001`) e dataset estático para a paridade 3D (8 amostras).
-- `Train.hpp`/`Train.cpp`: classe de treino usando **diferenças finitas centrais** `(cost(w+h) - cost(w-h)) / 2h` para estimar gradientes numericamente.
-- `main.cpp`: executável interativo que exibe a evolução do Erro Quadrático Médio (MSE) e o tempo de treino em milissegundos.
+### 1. Módulo Rust (`src/` e `Cargo.toml`)
+- `Cargo.toml`: pacote `tars` v0.1.0, `edition = "2024"`, dependência `rand = "0.10.3"`.
+- `src/lib.rs`: exporta os módulos (`data`, `layer`, `optimizer`, `grad`, `model`), função de ativação `sigmoidf(x: f32) -> f32`, inferência `forward<const IN: usize>(model: &Model<IN>, input: [f32; IN]) -> f32` e custo MSE `cost<const IN: usize, const OUT: usize>(model: &Model<IN>, data: &[Data<IN, OUT>]) -> f32`.
+- `src/layer.rs`: struct `Layer<const IN: usize, const OUT: usize>` com const generics, pesos `weights: [[f32; IN]; OUT]` e bias `bias: [f32; OUT]`.
+- `src/model.rs`: struct `Model<const IN: usize>` encapsulando `layer1: Layer<IN, 1>`.
+- `src/optimizer.rs`: struct `BGD` (Batch Gradient Descent) com taxa de aprendizado `lr: f32` e método `step<const IN: usize, const OUT: usize>(&self, model: &mut Model<IN>, grad: &Grad<IN, OUT>)`.
+- `src/grad.rs`: struct `Grad<const IN: usize, const OUT: usize>` e função `num_grad` calculando gradientes numericamente por **diferenças finitas centrais** `(cost(w+h) - cost(w-h)) / (2h)` com `h = 1e-3`.
+- `src/data.rs`: struct `Data<const IN: usize, const OUT: usize>` armazenando pares de amostra `input: [f32; IN]` e `target: [f32; OUT]`.
+- `src/bin/main.rs`: binário executável interativo treinando o modelo na tabela lógica OR (`DATA_TR`) com `EPOCHS = 100000`, `LR = 10.0`, medindo e exibindo o custo MSE e a evolução percentual.
 
 ### 2. Módulo SystemVerilog (`npu/`)
 - `main.sv`: módulo `npu` de produto escalar 4D inteira de 32 bits com acumulador, registrador de bias e FSM simples (`start`/`done`).
@@ -41,14 +42,14 @@ Para atender integralmente à definição de pronto (DoD) da versão **v0** espe
 
 | Componente | Estado Atual | O que precisa ser feito |
 | :--- | :--- | :--- |
-| **Álgebra Linear** | `std::vector` aninhado | Criar classes `Matrix<T>` e `Vector<T>` com alocação contígua em memória |
-| **Backpropagation** | Diferenças finitas | Implementar derivadas analíticas e backpropagation analítico exato |
-| **Treino QAT** | Float32 puro | Adicionar suporte a treino simulação Q8.24, INT8 QAT e Ternário QAT |
-| **Exportador** | Não existe | Criar `Exporter.hpp` gerando os arquivos `.mem` no formato especificado em [MEM_FORMAT.md](MEM_FORMAT.md) |
+| **Álgebra Linear / Tensores** | Structs com const generics `[f32; N]`, monolayer | Generalizar para suporte multi-camadas e operações matriciais/tensores contíguos em memória |
+| **Backpropagation** | Diferenças finitas (`num_grad`) | Implementar derivadas analíticas de Sigmoid/ReLU e backpropagation analítico exato |
+| **Treino QAT** | Float32 puro | Adicionar suporte a treino simulando Q8.24 (`i32`), INT8 QAT e Ternário QAT com STE |
+| **Exportador** | Não existe | Criar módulo `src/exporter.rs` gerando os arquivos `.mem` no formato especificado em [MEM_FORMAT.md](MEM_FORMAT.md) |
 | **NPU Hardware** | Módulos fixos | Unificar em `npu_core #(parameter MODE)` com acumulador estendido de 48b |
 | **SFU na NPU** | Não existe | Adicionar bloco combinacional de ativação (ReLU / Sigmoid) na saída do acumulador |
-| **Paridade** | Testes manuais | Testbench ler `model.mem`, `input.mem` e `expected.mem` validando 0 erros de bit |
-| **Experimentos v0** | Apenas Paridade 3D | Adicionar validação do XOR 2->2->1 e Regressão Linear Sintética |
+| **Paridade** | Testes manuais | Testbench ler `model.mem`, `input.mem` e `expected.mem` validando 0 erros de bit em relação ao Rust |
+| **Experimentos v0** | OR gate (2->1) | Adicionar validação do XOR (2->2->1) multicamada e Regressão Linear Sintética |
 
 ---
 
@@ -58,18 +59,18 @@ Siga esta sequência exata para avançar no projeto sem se perder:
 
 ### Etapa 1: Documentação e Infraestrutura
 - [x] Reestruturar a documentação com a matriz tripla de precisão e os 3 pilares.
-- [ ] **Ação Humana**: Fazer o merge/commit da branch `docs/roadmap-update`.
-- [ ] **Ação Humana**: Corrigir os arquivos de ambiente (`npu/README.md`, `shell.nix` e `README.txt`) — ver Seção "Pendências de Ambiente".
+- [x] Atualizar a documentação completa para Rust (Edition 2024).
+- [ ] **Ação Humana**: Corrigir os arquivos de ambiente (`shell.nix` e `README.txt`) — ver Seção "Pendências de Ambiente".
 
-### Etapa 2: Refatoração da Matemática C++ (Primeiro Código Humano)
-- [ ] Criar `src/Matrix.hpp` com buffer contíguo unidimensional.
-- [ ] Adicionar derivadas analíticas de Sigmoid e ReLU em `src/Math.cpp`.
-- [ ] Refatorar `Train.cpp` para usar Backpropagation analítico exato.
+### Etapa 2: Refatoração da Matemática e Backprop em Rust (Primeiro Código Humano)
+- [ ] Implementar suporte a redes multicamadas (ex.: XOR 2->2->1) em `src/model.rs`.
+- [ ] Adicionar derivadas analíticas de Sigmoid e ReLU em `src/lib.rs` / módulo de ativações.
+- [ ] Refatorar o treino para usar Backpropagation analítico exato (substituindo `num_grad`).
 
-### Etapa 3: Exportação e Paridade NPU (Fechamento da v0 e v0.5)
-- [ ] Criar `src/Exporter.hpp` para exportar a rede treinada no formato `model.mem`.
+### Etapa 3: Exportador e Paridade NPU (Fechamento da v0 e v0.5)
+- [ ] Criar `src/exporter.rs` para exportar a rede treinada no formato `model.mem`.
 - [ ] Adicionar o módulo SFU com ReLU em `npu/main.sv`.
-- [ ] Carregar `model.mem` no `tb.sv` e validar paridade com $0$ erros no XOR.
+- [ ] Carregar `model.mem` no `tb.sv` e validar paridade com 0 erros no XOR.
 
 ---
 
@@ -77,11 +78,14 @@ Siga esta sequência exata para avançar no projeto sem se perder:
 
 Conforme a política do repositório ([AGENTS.md](../AGENTS.md)), agentes não podem alterar arquivos de build ou código. As seguintes pendências devem ser corrigidas manualmente pelos mantenedores:
 
-1. **`npu/README.md`**:
+1. **Toolchain Rust (`Cargo.toml`)**:
+   - O projeto agora é compilado e executado nativamente via Cargo: `cargo run`, `cargo test`, `cargo build`.
+   - Os arquivos legados de C++ (`CMakeLists.txt` e `run.sh`) na raiz do repositório estão obsoletos e devem ser limpos ou adaptados pelo mantenedor.
+2. **`shell.nix`**:
+   - Atualmente configurado para o ambiente C++ antigo (`cmake`, `gnumake`, `clang`).
+   - Atualizar para incluir as ferramentas de Rust (`rustc`, `cargo`, `rust-analyzer` ou `rustPlatform.rustc`) e as ferramentas de hardware (`iverilog`, `verilator`, `gtkwave`).
+3. **`npu/README.md`**:
    - Remover a instrução `cd simple` (a pasta `simple/` não existe).
    - Documentar os alvos `make sim2`, `make test` e `make wave2` (que testam a NPU ternária).
-2. **`shell.nix`**:
-   - Atualmente possui apenas `cmake`, `gnumake` e `clang`.
-   - Adicionar os pacotes de hardware: `iverilog`, `verilator` e `gtkwave`.
-3. **`README.txt` (Raiz)**:
-   - Adicionar o link para a pasta `docs/` e uma breve descrição do propósito do `tars-ml` como biblioteca TinyML de Co-Design.
+4. **`README.txt` (Raiz)**:
+   - Atualizar as instruções de build para o fluxo do Cargo (`cargo run`), linkando para a pasta `docs/`.

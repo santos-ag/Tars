@@ -1,27 +1,23 @@
 use tars::*;
-const DATA_TR:&[Data<2,1>] = &[
-   Data::new([0.0,0.0],[0.0]),
-   Data::new([1.0,0.0],[1.0]),
-   Data::new([0.0,1.0],[1.0]),
-   Data::new([1.0,1.0],[1.0])
+const DATA_TR: &[Data<3, 1>] = &[
+    Data::new([0.0, 0.0, 0.0], [0.0]),
+    Data::new([0.0, 0.0, 1.0], [1.0]),
+    Data::new([0.0, 1.0, 0.0], [1.0]),
+    Data::new([0.0, 1.0, 1.0], [0.0]),
+    Data::new([1.0, 0.0, 0.0], [1.0]),
+    Data::new([1.0, 0.0, 1.0], [0.0]),
+    Data::new([1.0, 1.0, 0.0], [0.0]),
+    Data::new([1.0, 1.0, 1.0], [1.0]),
 ];
 fn main() {
-    const LR:f32 = 1e1;
+    const LR:f32 = 2e1;
     const EPOCHS:usize = 100000;
-    let mut model=Model::new(
-        Layer::new(
-
-            [[
-                rand::random(),
-                rand::random()
-            ]],
-            [rand::random();1]
-        )
-    );
+    let mut model=Model::new(&[3,4,1]);
+    
     let optimizer = BGD::new(LR);
     let mut prev_cost = cost(&model,&DATA_TR);
             println!("epoch: 000000, cost is:{:014.8}",prev_cost);
-    {
+    
     for i in 1..EPOCHS+1{
         let grad = num_grad(&model,&DATA_TR);
         optimizer.step(&mut model,&grad);
@@ -32,6 +28,10 @@ fn main() {
 
         }
     }
+    
+    println!("{model}");
+
+    for d in DATA_TR{
+        println!("Para as entradas: {:?} o modelo retorna: {:?} esperado:{:?} ",d.input,model.forward(&d.input),d.target);
     }
-    println!("The model is: {:?}",model);
 }

@@ -11,14 +11,18 @@ impl BGD{
             lr
         }
     }
-    pub fn step<const IN:usize,const OUT:usize>(&self,model:&mut Model<IN>,grad:&Grad<IN,OUT>){
-        for i in 0..model.layer1.weights[0].len(){
-            model.layer1.weights[0][i] -= grad.weights[0][i] * self.lr;
-
+    pub fn step(&self,model:&mut Model,grad:&Grad){
+        for l in 0..model.layers.len(){
+        for o in 0..model.layers[l].weights.len(){
+            for w in 0..model.layers[l].weights[o].len(){
+                model.layers[l].weights[o][w] -= grad.layers[l].weights[o][w]*self.lr;                
+            }
         }
-        for i in 0..model.layer1.bias.len(){
-            model.layer1.bias[i] -= grad.bias[i] * self.lr;
+        for o in 0..model.layers[l].bias.len(){
+            model.layers[l].bias[o] -= grad.layers[l].bias[o]*self.lr;               
+        }
+        
+    }
 
-        }    
     }
 }
