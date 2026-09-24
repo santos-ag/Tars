@@ -1,4 +1,4 @@
-use tars::{Activation::Relu, *};
+use tars::*;
 const DATA_TR: &[Data<2, 2>] = &[
     Data::new([0.1, 0.2], [0.15, 0.02]),
     Data::new([0.2, 0.8], [0.50, 0.16]),
@@ -13,33 +13,37 @@ const DATA_TR: &[Data<2, 2>] = &[
 ];
 
 fn main() {
-    let mut model = Sequential::new(2).linear(4).relu().linear(4).relu();
-    let input = DATA_TR[0].input;
-    println!("{:?},", model.forward(&input));
-
-    /*
-    const LR:f32 = 2e1;
-    const EPOCHS:usize = 100000;
-    let mut model=Model::new(&[2,4,2]);
+    const LR: f32 = 2e1;
+    const EPOCHS: usize = 100000;
+    let mut model = Sequential::new(2).linear(4).sigmoid().linear(2).sigmoid();
 
     let optimizer = BGD::new(LR);
-    let mut prev_cost = cost(&model,&DATA_TR);
-            println!("epoch: 000000, cost is:{:014.8}",prev_cost);
+    let mut prev_cost = cost(&model, &DATA_TR);
+    println!("epoch: 000000, cost is:{:014.8}", prev_cost);
 
-    for i in 1..EPOCHS+1{
-        let grad = num_grad(&model,&DATA_TR);
-        optimizer.step(&mut model,&grad);
-        let curr_cost = cost(&model,&DATA_TR);
-        if i%(EPOCHS/20)==0 {
-            println!("epoch: {:06.0}, cost is:{:014.8}, {:07.3}% better",i,curr_cost,((prev_cost-curr_cost)*100.0)/prev_cost);
+    for i in 1..EPOCHS + 1 {
+        let grad = num_grad(&model, &DATA_TR);
+        optimizer.step(&mut model, &grad);
+        let curr_cost = cost(&model, &DATA_TR);
+        if i % (EPOCHS / 20) == 0 {
+            println!(
+                "epoch: {:06.0}, cost is:{:014.8}, {:07.3}% better",
+                i,
+                curr_cost,
+                ((prev_cost - curr_cost) * 100.0) / prev_cost
+            );
             prev_cost = curr_cost;
-
         }
     }
 
-    println!("{model}");
+    //println!("{model}");
 
-    for d in DATA_TR{
-        println!("Para as entradas: {:?} o modelo retorna: {:?} esperado:{:?} ",d.input,model.forward(&d.input),d.target);
-    }*/
+    for d in DATA_TR {
+        println!(
+            "Para as entradas: {:?} o modelo retorna: {:?} esperado:{:?} ",
+            d.input,
+            model.forward(&d.input),
+            d.target
+        );
+    }
 }
