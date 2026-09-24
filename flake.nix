@@ -24,6 +24,9 @@
           cmake
           gnumake
           gdb
+          pkg-config
+          fontconfig
+          graphviz
         ];
 
         # Ferramentas de Hardware / NPU (SystemVerilog)
