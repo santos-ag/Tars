@@ -2,7 +2,7 @@ use crate::Activation;
 use crate::AnyModule;
 use crate::Linear;
 use crate::Module;
-use std::fmt;
+//use std::fmt;
 
 #[derive(Clone, Debug)]
 pub struct Sequential {
@@ -42,24 +42,28 @@ impl Module for Sequential {
         output
     }
 }
+
 /*
 #[derive(Clone, Debug)]
 pub struct Model {
-    pub layers: Vec<AnyModule>,
+    pub modules: Vec<AnyModule>,
 }
 
 impl Model {
-    pub fn new(topology: &[usize]) -> Self {
-        Self {  }
-    }
-    pub fn forward(&self, input: &[f32]) -> Vec<f32> {
-        let mut act = input.to_vec();
-        for l in &self.layers {
-            act = l.forward(&act);
+    pub fn new(net: &[AnyModule]) -> Self {
+        Self {
+            modules: net.to_vec(),
         }
-        act
+    }
+    fn forward(&self, input: &[f32]) -> Vec<f32> {
+        let mut output = input.to_vec();
+        for module in &self.modules {
+            output = module.forward(&output);
+        }
+        output
     }
 }
+
 impl fmt::Display for Model {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         for l in 0..self.layers.len() {
