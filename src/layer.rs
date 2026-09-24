@@ -41,7 +41,7 @@ impl Linear {
             in_sz,
             out_sz,
             weights: random_mat(in_sz, out_sz),
-            bias: random_vec(out_sz),
+            bias: vec![0.0; out_sz],
         }
     }
 }
@@ -80,6 +80,20 @@ impl Module for Activation {
 pub enum AnyModule {
     Linear(Linear),
     Activation(Activation),
+}
+impl AnyModule {
+    pub fn as_linear(&self) -> &Linear {
+        match self {
+            Self::Linear(linear) => linear,
+            _ => panic!(""),
+        }
+    }
+    pub fn as_mut_linear(&mut self) -> &mut Linear {
+        match self {
+            Self::Linear(linear) => linear,
+            _ => panic!(""),
+        }
+    }
 }
 impl Module for AnyModule {
     fn forward(&self, input: &[f32]) -> Vec<f32> {
