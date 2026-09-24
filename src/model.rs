@@ -1,28 +1,56 @@
-use crate::Layer;
+use crate::Activation;
+use crate::AnyModule;
+use crate::Linear;
 use crate::Module;
 use std::fmt;
+
+#[derive(Clone, Debug)]
+pub struct Sequential {
+    pub modules: Vec<AnyModule>,
+    input_size: usize,
+}
+impl Sequential {
+    pub fn new(input_size: usize) -> Self {
+        Self {
+            modules: Vec::new(),
+            input_size,
+        }
+    }
+    pub fn linear(mut self, output_size: usize) -> Self {
+        let linear = Linear::random(self.input_size, output_size);
+        self.modules.push(AnyModule::Linear(linear));
+        self.input_size = output_size;
+        self
+    }
+    pub fn relu(mut self) -> Self {
+        self.modules.push(AnyModule::Activation(Activation::Relu));
+        self
+    }
+    pub fn sigmoid(mut self) -> Self {
+        self.modules
+            .push(AnyModule::Activation(Activation::Sigmoid));
+        self
+    }
+}
+
+impl Module for Sequential {
+    fn forward(&self, input: &[f32]) -> Vec<f32> {
+        let mut output = input.to_vec();
+        for module in &self.modules {
+            output = module.forward(&output);
+        }
+        output
+    }
+}
+/*
 #[derive(Clone, Debug)]
 pub struct Model {
-    pub layers: Vec<Layer>,
+    pub layers: Vec<AnyModule>,
 }
 
 impl Model {
     pub fn new(topology: &[usize]) -> Self {
-        let mut layers = vec![];
-        for l in 0..(topology.len() - 1) {
-            let mut weight = vec![vec![0.0; topology[l]]; topology[l + 1]];
-            let mut bias = vec![0.0; topology[l + 1]];
-            for o in 0..topology[l + 1] {
-                for w in 0..topology[l] {
-                    weight[o][w] = rand::random();
-                }
-                bias[o] = rand::random();
-            }
-            let layer = Layer::new(topology[l], topology[l + 1], weight, bias);
-            layers.push(layer);
-        }
-        let model = Model { layers };
-        model
+        Self {  }
     }
     pub fn forward(&self, input: &[f32]) -> Vec<f32> {
         let mut act = input.to_vec();
@@ -49,4 +77,4 @@ impl fmt::Display for Model {
         }
         Ok(())
     }
-}
+}*/

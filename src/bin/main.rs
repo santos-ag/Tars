@@ -1,4 +1,4 @@
-use tars::*;
+use tars::{Activation::Relu, *};
 const DATA_TR: &[Data<2, 2>] = &[
     Data::new([0.1, 0.2], [0.15, 0.02]),
     Data::new([0.2, 0.8], [0.50, 0.16]),
@@ -11,7 +11,13 @@ const DATA_TR: &[Data<2, 2>] = &[
     Data::new([0.9, 0.1], [0.50, 0.09]),
     Data::new([0.9, 0.9], [0.90, 0.81]),
 ];
+
 fn main() {
+    let mut model = Sequential::new(2).linear(4).relu().linear(4).relu();
+    let input = DATA_TR[0].input;
+    println!("{:?},", model.forward(&input));
+
+    /*
     const LR:f32 = 2e1;
     const EPOCHS:usize = 100000;
     let mut model=Model::new(&[2,4,2]);
@@ -19,7 +25,7 @@ fn main() {
     let optimizer = BGD::new(LR);
     let mut prev_cost = cost(&model,&DATA_TR);
             println!("epoch: 000000, cost is:{:014.8}",prev_cost);
-    
+
     for i in 1..EPOCHS+1{
         let grad = num_grad(&model,&DATA_TR);
         optimizer.step(&mut model,&grad);
@@ -30,10 +36,10 @@ fn main() {
 
         }
     }
-    
+
     println!("{model}");
 
     for d in DATA_TR{
         println!("Para as entradas: {:?} o modelo retorna: {:?} esperado:{:?} ",d.input,model.forward(&d.input),d.target);
-    }
+    }*/
 }
