@@ -10,6 +10,7 @@ pub mod model;
 pub use model::*;
 pub mod math;
 pub use math::*;
+pub mod view;
 
 /*pub fn cost<const IN: usize, const OUT: usize>(model: &Model, data: &[Data<IN, OUT>]) -> f32 {
     let mut loss = 0.0;
